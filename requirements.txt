@@ -1,5 +1,0 @@
-click
-graphviz
-pillow
-pyyaml
-setuptools
