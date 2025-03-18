@@ -28,7 +28,7 @@ def embed_svg_images(svg_in: str, base_path: Union[str, Path] = Path.cwd()) -> s
 
     def replace(match: re.Match) -> str:
         imgurl = match["URL"]
-        if not imgurl in images_b64:  # only encode/cache every unique URL once
+        if imgurl not in images_b64:  # only encode/cache every unique URL once
             imgurl_abs = (Path(base_path) / imgurl).resolve()
             image = imgurl_abs.read_bytes()
             images_b64[imgurl] = base64.b64encode(image).decode("utf-8")

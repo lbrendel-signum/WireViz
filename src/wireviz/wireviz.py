@@ -100,7 +100,7 @@ def parse(
     if yaml_file:
         # if reading from file, ensure that input file's parent directory is included in image_paths
         default_image_path = yaml_file.parent.resolve()
-        if not default_image_path in [Path(x).resolve() for x in image_paths]:
+        if default_image_path not in [Path(x).resolve() for x in image_paths]:
             image_paths.append(default_image_path)
 
     # define variables =========================================================
@@ -340,7 +340,7 @@ def parse(
 
     proposed_components = list(template_connectors.keys()) + list(template_cables.keys())
     used_components = set(designators_and_templates.values())
-    forgotten_components = [c for c in proposed_components if not c in used_components]
+    forgotten_components = [c for c in proposed_components if c not in used_components]
     if len(forgotten_components) > 0:
         print("Warning: The following components are not referenced in any connection set:")
         print(", ".join(forgotten_components))

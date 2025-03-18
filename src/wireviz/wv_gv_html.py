@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import re
 from typing import List, Optional, Union
 
 from wireviz.DataClasses import Color
@@ -63,7 +62,6 @@ def html_colorbar(color: Color) -> str:
 
 
 def html_image(image):
-    from wireviz.DataClasses import Image
 
     if not image:
         return None
@@ -83,7 +81,6 @@ def html_image(image):
 
 
 def html_caption(image):
-    from wireviz.DataClasses import Image
 
     return (
         f'<tdX sides="BLR"{html_bgcolor_attr(image.bgcolor)}>{html_line_breaks(image.caption)}'
@@ -93,7 +90,6 @@ def html_caption(image):
 
 
 def html_size_attr(image):
-    from wireviz.DataClasses import Image
 
     # Return Graphviz HTML attributes to specify minimum or fixed size of a TABLE or TD object
     return (

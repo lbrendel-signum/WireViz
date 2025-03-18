@@ -89,7 +89,6 @@ def bom_entry_key(entry: BOMEntry) -> BOMKey:
 
 def generate_bom(harness: "Harness") -> List[BOMEntry]:
     """Return a list of BOM entries generated from the harness."""
-    from wireviz.Harness import Harness  # Local import to avoid circular imports
 
     bom_entries = []
     # connectors

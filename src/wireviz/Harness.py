@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import re
-from collections import Counter
 from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any
 
 from graphviz import Graph
 from wireviz import APP_NAME, APP_URL, __version__, wv_colors
@@ -25,7 +24,6 @@ from wireviz.wv_bom import (
     HEADER_PN,
     HEADER_SPN,
     bom_list,
-    component_table_entry,
     generate_bom,
     get_additional_component_table,
     pn_info_string,
@@ -44,8 +42,6 @@ from wireviz.wv_gv_html import (
 from wireviz.wv_helper import (
     awg_equiv,
     file_write_text,
-    flatten2d,
-    is_arrow,
     mm2_equiv,
     tuplelist2tsv,
 )
@@ -125,7 +121,7 @@ class Harness:
                         from_pin = pin
                     if name == to_name:
                         to_pin = pin
-                if not pin in connector.pins:
+                if pin not in connector.pins:
                     raise Exception(f"{name}:{pin} not found.")
 
         # check via cable
@@ -328,7 +324,7 @@ class Harness:
             ):
                 wirehtml.append("   <tr>")
                 wirehtml.append(f"    <td><!-- {i}_in --></td>")
-                wirehtml.append(f"    <td>")
+                wirehtml.append("    <td>")
 
                 wireinfo = []
                 if cable.show_wirenumbers:
@@ -340,13 +336,13 @@ class Harness:
                     wireinfo.append(wirelabel if wirelabel is not None else "")
                 wirehtml.append(f"     {':'.join(wireinfo)}")
 
-                wirehtml.append(f"    </td>")
+                wirehtml.append("    </td>")
                 wirehtml.append(f"    <td><!-- {i}_out --></td>")
                 wirehtml.append("   </tr>")
 
                 # fmt: off
                 bgcolors = ['#000000'] + get_color_hex(connection_color, pad=pad) + ['#000000']
-                wirehtml.append(f"   <tr>")
+                wirehtml.append("   <tr>")
                 wirehtml.append(f'    <td colspan="3" border="0" cellspacing="0" cellpadding="0" port="w{i}" height="{(2 * len(bgcolors))}">')
                 wirehtml.append('     <table cellspacing="0" cellborder="0" border="0">')
                 for j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
@@ -406,7 +402,7 @@ class Harness:
                     attributes = f'height="6" bgcolor="{shield_color_hex}" border="2" sides="tb"'
                 else:
                     # shield is shown as a thin black wire
-                    attributes = f'height="2" bgcolor="#000000" border="0"'
+                    attributes = 'height="2" bgcolor="#000000" border="0"'
                 # fmt: off
                 wirehtml.append(f'   <tr><td colspan="3" cellpadding="0" {attributes} port="ws"></td></tr>')
                 # fmt: on
@@ -669,7 +665,7 @@ class Harness:
             # TODO: implement PDF output
             print("PDF output is not yet supported")
         # delete SVG if not needed
-        if "html" in fmt and not "svg" in fmt:
+        if "html" in fmt and "svg" not in fmt:
             # SVG file was just needed to generate HTML
             Path(f"{filename}.tmp.svg").unlink()
         elif "svg" in fmt:
