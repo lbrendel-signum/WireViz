@@ -2,12 +2,15 @@
 
 from dataclasses import asdict
 from itertools import groupby
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from wireviz.data import AdditionalComponent, Cable, Color, Connector
 from wireviz.colors import translate_color
+from wireviz.data import AdditionalComponent, Cable, Color, Connector
 from wireviz.graphviz_html import html_bgcolor_attr, html_line_breaks
 from wireviz.helper import clean_whitespace
+
+if TYPE_CHECKING:
+    from wireviz.harness import Harness
 
 BOM_COLUMNS_ALWAYS = ("id", "description", "qty", "unit", "designators")
 BOM_COLUMNS_OPTIONAL = ("pn", "manufacturer", "mpn", "supplier", "spn")
