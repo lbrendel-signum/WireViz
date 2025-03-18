@@ -12,7 +12,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))  # add src/wireviz to PATH
 
 from wireviz.data import Metadata, Options, Tweak
-from wireviz.Harness import Harness
+from wireviz.Harnes_s import Harness
 from wireviz.helper import (
     expand,
     file_read_text,
