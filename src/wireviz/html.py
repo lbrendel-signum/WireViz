@@ -4,11 +4,11 @@ import re
 from pathlib import Path
 from typing import Callable, Dict, List, Union
 
-from wireviz import APP_NAME, APP_URL, __version__, wv_colors
-from wireviz.DataClasses import Metadata, Options
+from wireviz import APP_NAME, APP_URL, __version__, colors
+from wireviz.data import Metadata, Options
 from wireviz.svgembed import data_URI_base64
-from wireviz.wv_gv_html import html_line_breaks
-from wireviz.wv_helper import (
+from wireviz.graphviz_html import html_line_breaks
+from wireviz.helper import (
     file_read_text,
     file_write_text,
     flatten2d,
@@ -77,7 +77,7 @@ def generate_html_output(
     replacements = {
         "<!-- %generator% -->": f"{APP_NAME} {__version__} - {APP_URL}",
         "<!-- %fontname% -->": options.fontname,
-        "<!-- %bgcolor% -->": wv_colors.translate_color(options.bgcolor, "hex"),
+        "<!-- %bgcolor% -->": colors.translate_color(options.bgcolor, "hex"),
         "<!-- %filename% -->": str(filename),
         "<!-- %filename_stem% -->": Path(filename).stem,
         "<!-- %bom% -->": bom_html,

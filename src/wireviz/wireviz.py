@@ -11,9 +11,9 @@ import yaml
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))  # add src/wireviz to PATH
 
-from wireviz.DataClasses import Metadata, Options, Tweak
+from wireviz.data import Metadata, Options, Tweak
 from wireviz.Harness import Harness
-from wireviz.wv_helper import (
+from wireviz.helper import (
     expand,
     file_read_text,
     get_single_key_and_value,

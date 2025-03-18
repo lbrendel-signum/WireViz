@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from graphviz import Graph
-from wireviz import APP_NAME, APP_URL, __version__, wv_colors
-from wireviz.DataClasses import (
+from wireviz import APP_NAME, APP_URL, __version__, colors
+from wireviz.data import (
     Cable,
     Connector,
     MateComponent,
@@ -19,7 +19,7 @@ from wireviz.DataClasses import (
     Tweak,
 )
 from wireviz.svgembed import embed_svg_images, embed_svg_images_file
-from wireviz.wv_bom import (
+from wireviz.bom import (
     HEADER_MPN,
     HEADER_PN,
     HEADER_SPN,
@@ -28,8 +28,8 @@ from wireviz.wv_bom import (
     get_additional_component_table,
     pn_info_string,
 )
-from wireviz.wv_colors import get_color_hex, translate_color
-from wireviz.wv_gv_html import (
+from wireviz.colors import get_color_hex, translate_color
+from wireviz.graphviz_html import (
     html_bgcolor,
     html_bgcolor_attr,
     html_caption,
@@ -39,13 +39,13 @@ from wireviz.wv_gv_html import (
     nested_html_table,
     remove_links,
 )
-from wireviz.wv_helper import (
+from wireviz.helper import (
     awg_equiv,
     file_write_text,
     mm2_equiv,
     tuplelist2tsv,
 )
-from wireviz.wv_html import generate_html_output
+from wireviz.html import generate_html_output
 
 OLD_CONNECTOR_ATTR = {
     "pinout": "was renamed to 'pinlabels' in v0.2",
@@ -161,7 +161,7 @@ class Harness:
             "graph",
             rankdir="LR",
             ranksep="2",
-            bgcolor=wv_colors.translate_color(self.options.bgcolor, "HEX"),
+            bgcolor=colors.translate_color(self.options.bgcolor, "HEX"),
             nodesep="0.33",
             fontname=self.options.fontname,
         )  # TODO: Add graph attribute: charset="utf-8",
@@ -172,7 +172,7 @@ class Harness:
             height="0",
             margin="0",  # Actual size of the node is entirely determined by the label.
             style="filled",
-            fillcolor=wv_colors.translate_color(self.options.bgcolor_node, "HEX"),
+            fillcolor=colors.translate_color(self.options.bgcolor_node, "HEX"),
             fontname=self.options.fontname,
         )
         dot.attr("edge", style="bold", fontname=self.options.fontname)
@@ -221,12 +221,12 @@ class Harness:
                     if pinlabel:
                         pinhtml.append(f"    <td>{pinlabel}</td>")
                     if connector.pincolors:
-                        if pincolor in wv_colors._color_hex.keys():
+                        if pincolor in colors._color_hex.keys():
                             # fmt: off
                             pinhtml.append(f'    <td sides="tbl">{translate_color(pincolor, self.options.color_mode)}</td>')
                             pinhtml.append( '    <td sides="tbr">')
                             pinhtml.append( '     <table border="0" cellborder="1"><tr>')
-                            pinhtml.append(f'      <td bgcolor="{wv_colors.translate_color(pincolor, "HEX")}" width="8" height="8" fixedsize="true"></td>')
+                            pinhtml.append(f'      <td bgcolor="{colors.translate_color(pincolor, "HEX")}" width="8" height="8" fixedsize="true"></td>')
                             pinhtml.append( '     </tr></table>')
                             pinhtml.append( '    </td>')
                             # fmt: on
@@ -329,7 +329,7 @@ class Harness:
                 wireinfo = []
                 if cable.show_wirenumbers:
                     wireinfo.append(str(i))
-                colorstr = wv_colors.translate_color(connection_color, self.options.color_mode)
+                colorstr = colors.translate_color(connection_color, self.options.color_mode)
                 if colorstr:
                     wireinfo.append(colorstr)
                 if cable.wirelabels:
@@ -346,7 +346,7 @@ class Harness:
                 wirehtml.append(f'    <td colspan="3" border="0" cellspacing="0" cellpadding="0" port="w{i}" height="{(2 * len(bgcolors))}">')
                 wirehtml.append('     <table cellspacing="0" cellborder="0" border="0">')
                 for j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
-                    wirehtml.append(f'      <tr><td colspan="3" cellpadding="0" height="2" bgcolor="{bgcolor if bgcolor != "" else wv_colors.default_color}" border="0"></td></tr>')
+                    wirehtml.append(f'      <tr><td colspan="3" cellpadding="0" height="2" bgcolor="{bgcolor if bgcolor != "" else colors.default_color}" border="0"></td></tr>')
                 wirehtml.append("     </table>")
                 wirehtml.append("    </td>")
                 wirehtml.append("   </tr>")
@@ -398,7 +398,7 @@ class Harness:
                 wirehtml.append("   </tr>")
                 if isinstance(cable.shield, str):
                     # shield is shown with specified color and black borders
-                    shield_color_hex = wv_colors.get_color_hex(cable.shield)[0]
+                    shield_color_hex = colors.get_color_hex(cable.shield)[0]
                     attributes = f'height="6" bgcolor="{shield_color_hex}" border="2" sides="tb"'
                 else:
                     # shield is shown as a thin black wire
@@ -420,7 +420,7 @@ class Harness:
                         "edge",
                         color=":".join(
                             ["#000000"]
-                            + wv_colors.get_color_hex(
+                            + colors.get_color_hex(
                                 cable.colors[connection.via_port - 1], pad=pad
                             )
                             + ["#000000"]

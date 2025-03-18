@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
-from wireviz.wv_colors import COLOR_CODES, Color, ColorMode, Colors, ColorScheme
-from wireviz.wv_helper import aspect_ratio, int2tuple
+from wireviz.colors import COLOR_CODES, Color, ColorMode, Colors, ColorScheme
+from wireviz.helper import aspect_ratio, int2tuple
 
 # Each type alias have their legal values described in comments - validation might be implemented in the future
 PlainText = str  # Text not containing HTML tags nor newlines

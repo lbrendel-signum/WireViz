@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
 import wireviz.wireviz as wv
 from wireviz import APP_NAME, __version__
-from wireviz.wv_helper import file_read_text
+from wireviz.helper import file_read_text
 
 app = typer.Typer()
 

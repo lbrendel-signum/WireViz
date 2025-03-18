@@ -2,9 +2,9 @@
 
 from typing import List, Optional, Union
 
-from wireviz.DataClasses import Color
-from wireviz.wv_colors import translate_color
-from wireviz.wv_helper import remove_links
+from wireviz.data import Color
+from wireviz.colors import translate_color
+from wireviz.helper import remove_links
 
 
 def nested_html_table(
