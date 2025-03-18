@@ -3,8 +3,9 @@
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
-import click
+import typer
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -12,6 +13,8 @@ if __name__ == "__main__":
 import wireviz.wireviz as wv
 from wireviz import APP_NAME, __version__
 from wireviz.wv_helper import file_read_text
+
+app = typer.Typer()
 
 format_codes = {
     # "c": "csv",
@@ -23,55 +26,15 @@ format_codes = {
     "t": "tsv",
 }
 
-epilog = "The -f or --format option accepts a string containing one or more of the "
-epilog += "following characters to specify which file types to output:\n"
-epilog += ", ".join([f"{key} ({value.upper()})" for key, value in format_codes.items()])
 
-
-@click.command(
-    epilog=epilog,
-    no_args_is_help=True,
-    context_settings=dict(help_option_names=["-h", "--help"]),
-)
-@click.argument("file", nargs=-1)
-@click.option(
-    "-f",
-    "--format",
-    default="hpst",
-    type=str,
-    show_default=True,
-    help="Output formats (see below).",
-)
-@click.option(
-    "-p",
-    "--prepend",
-    default=[],
-    multiple=True,
-    type=Path,
-    help="YAML file to prepend to the input file (optional).",
-)
-@click.option(
-    "-o",
-    "--output-dir",
-    default=None,
-    type=Path,
-    help="Directory to use for output files, if different from input file directory.",
-)
-@click.option(
-    "-O",
-    "--output-name",
-    default=None,
-    type=str,
-    help="File name (without extension) to use for output files, if different from input file name.",
-)
-@click.option(
-    "-V",
-    "--version",
-    is_flag=True,
-    default=False,
-    help=f"Output {APP_NAME} version and exit.",
-)
-def wireviz(file, format, prepend, output_dir, output_name, version):
+def wireviz(
+    file: list[str],
+    output_name: Optional[str] = None,
+    format: Optional[str] = "hpst",
+    prepend: Optional[list[str]] = None,
+    output_dir: Optional[Path] = ".\\",
+    version: Optional[bool] = False,
+):
     """
     Parses the provided FILE and generates the specified outputs.
     """
@@ -114,20 +77,20 @@ def wireviz(file, format, prepend, output_dir, output_name, version):
         prepend_input = ""
 
     # run WireVIz on each input file
-    for file in filepaths:
-        file = Path(file)
-        if not file.exists():
-            raise Exception(f"File does not exist:\n{file}")
+    for fi in filepaths:
+        f = Path(fi)
+        if not f.exists():
+            raise Exception(f"File does not exist:\n{f}")
 
         # file_out = file.with_suffix("") if not output_file else output_file
-        _output_dir = file.parent if not output_dir else output_dir
-        _output_name = file.stem if not output_name else output_name
+        _output_dir = f.parent if not output_dir else output_dir
+        _output_name = f.stem if not output_name else output_name
 
-        print("Input file:  ", file)
+        print("Input file:  ", f)
         print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
 
-        yaml_input = file_read_text(file)
-        file_dir = file.parent
+        yaml_input = file_read_text(f)
+        file_dir = f.parent
 
         yaml_input = prepend_input + yaml_input
         image_paths = {file_dir}
@@ -146,4 +109,4 @@ def wireviz(file, format, prepend, output_dir, output_name, version):
 
 
 if __name__ == "__main__":
-    wireviz()
+    typer.run(wireviz)
