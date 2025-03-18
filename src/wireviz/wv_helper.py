@@ -101,11 +101,7 @@ def tuplelist2tsv(inp, header=None):
 
 
 def remove_links(inp):
-    return (
-        re.sub(r"<[aA] [^>]*>([^<]*)</[aA]>", r"\1", inp)
-        if isinstance(inp, str)
-        else inp
-    )
+    return re.sub(r"<[aA] [^>]*>([^<]*)</[aA]>", r"\1", inp) if isinstance(inp, str) else inp
 
 
 def clean_whitespace(inp):
@@ -148,9 +144,7 @@ def is_arrow(inp):
       <==, ==, ==>, <=>
     """
     # regex by @shiraneyo
-    return bool(
-        re.match(r"^\s*(?P<leftHead><?)(?P<body>-+|=+)(?P<rightHead>>?)\s*$", inp)
-    )
+    return bool(re.match(r"^\s*(?P<leftHead><?)(?P<body>-+|=+)(?P<rightHead>>?)\s*$", inp))
 
 
 def aspect_ratio(image_src):
@@ -177,9 +171,7 @@ def smart_file_resolve(filename: str, possible_paths: (str, List[str])) -> Path:
         else:
             raise Exception(f"{filename} does not exist.")
     else:  # search all possible paths in decreasing order of precedence
-        possible_paths = [
-            Path(path).resolve() for path in possible_paths if path is not None
-        ]
+        possible_paths = [Path(path).resolve() for path in possible_paths if path is not None]
         for possible_path in possible_paths:
             resolved_path = (possible_path / filename).resolve()
             if resolved_path.exists():

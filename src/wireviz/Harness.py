@@ -140,16 +140,12 @@ class Harness:
                 # TODO: Maybe issue a warning if present in both lists but referencing the same wire?
             if via_wire in cable.colors:
                 if cable.colors.count(via_wire) > 1:
-                    raise Exception(
-                        f"{via_name}:{via_wire} is used for more than one wire."
-                    )
+                    raise Exception(f"{via_name}:{via_wire} is used for more than one wire.")
                 # list index starts at 0, wire IDs start at 1
                 via_wire = cable.colors.index(via_wire) + 1
             elif via_wire in cable.wirelabels:
                 if cable.wirelabels.count(via_wire) > 1:
-                    raise Exception(
-                        f"{via_name}:{via_wire} is used for more than one wire."
-                    )
+                    raise Exception(f"{via_name}:{via_wire} is used for more than one wire.")
                 via_wire = (
                     cable.wirelabels.index(via_wire) + 1
                 )  # list index starts at 0, wire IDs start at 1
@@ -213,24 +209,19 @@ class Harness:
 
             if connector.style != "simple":
                 pinhtml = []
-                pinhtml.append(
-                    '<table border="0" cellspacing="0" cellpadding="3" cellborder="1">'
-                )
+                pinhtml.append('<table border="0" cellspacing="0" cellpadding="3" cellborder="1">')
 
                 for pinindex, (pinname, pinlabel, pincolor) in enumerate(
-                    zip_longest(
-                        connector.pins, connector.pinlabels, connector.pincolors
-                    )
+                    zip_longest(connector.pins, connector.pinlabels, connector.pincolors)
                 ):
-                    if (
-                        connector.hide_disconnected_pins
-                        and not connector.visible_pins.get(pinname, False)
+                    if connector.hide_disconnected_pins and not connector.visible_pins.get(
+                        pinname, False
                     ):
                         continue
 
                     pinhtml.append("   <tr>")
                     if connector.ports_left:
-                        pinhtml.append(f'    <td port="p{pinindex+1}l">{pinname}</td>')
+                        pinhtml.append(f'    <td port="p{pinindex + 1}l">{pinname}</td>')
                     if pinlabel:
                         pinhtml.append(f"    <td>{pinlabel}</td>")
                     if connector.pincolors:
@@ -247,7 +238,7 @@ class Harness:
                             pinhtml.append('    <td colspan="2"></td>')
 
                     if connector.ports_right:
-                        pinhtml.append(f'    <td port="p{pinindex+1}r">{pinname}</td>')
+                        pinhtml.append(f'    <td port="p{pinindex + 1}r">{pinname}</td>')
                     pinhtml.append("   </tr>")
 
                 pinhtml.append("  </table>")
@@ -255,10 +246,7 @@ class Harness:
                 if len(pinhtml) == 2:  # Table start and end with no rows between?
                     pinhtml = ["<!-- all pins hidden -->"]  # Avoid Graphviz error
 
-                html = [
-                    row.replace("<!-- connector table -->", "\n".join(pinhtml))
-                    for row in html
-                ]
+                html = [row.replace("<!-- connector table -->", "\n".join(pinhtml)) for row in html]
 
             html = "\n".join(html)
             dot.node(
@@ -288,11 +276,7 @@ class Harness:
 
         # determine if there are double- or triple-colored wires in the harness;
         # if so, pad single-color wires to make all wires of equal thickness
-        pad = any(
-            len(colorstr) > 2
-            for cable in self.cables.values()
-            for colorstr in cable.colors
-        )
+        pad = any(len(colorstr) > 2 for cable in self.cables.values() for colorstr in cable.colors)
 
         for cable in self.cables.values():
             html = []
@@ -302,10 +286,10 @@ class Harness:
                 # Only convert units we actually know about, i.e. currently
                 # mm2 and awg --- other units _are_ technically allowed,
                 # and passed through as-is.
-                if cable.gauge_unit == "mm\u00B2":
+                if cable.gauge_unit == "mm\u00b2":
                     awg_fmt = f" ({awg_equiv(cable.gauge)} AWG)"
                 elif cable.gauge_unit.upper() == "AWG":
-                    awg_fmt = f" ({mm2_equiv(cable.gauge)} mm\u00B2)"
+                    awg_fmt = f" ({mm2_equiv(cable.gauge)} mm\u00b2)"
 
             # fmt: off
             rows = [[f'{html_bgcolor(cable.bgcolor_title)}{remove_links(cable.name)}'
@@ -349,14 +333,12 @@ class Harness:
                 wireinfo = []
                 if cable.show_wirenumbers:
                     wireinfo.append(str(i))
-                colorstr = wv_colors.translate_color(
-                    connection_color, self.options.color_mode
-                )
+                colorstr = wv_colors.translate_color(connection_color, self.options.color_mode)
                 if colorstr:
                     wireinfo.append(colorstr)
                 if cable.wirelabels:
                     wireinfo.append(wirelabel if wirelabel is not None else "")
-                wirehtml.append(f'     {":".join(wireinfo)}')
+                wirehtml.append(f"     {':'.join(wireinfo)}")
 
                 wirehtml.append(f"    </td>")
                 wirehtml.append(f"    <td><!-- {i}_out --></td>")
@@ -380,9 +362,7 @@ class Harness:
                     wireidentification = []
                     if isinstance(cable.pn, list):
                         wireidentification.append(
-                            pn_info_string(
-                                HEADER_PN, None, remove_links(cable.pn[i - 1])
-                            )
+                            pn_info_string(HEADER_PN, None, remove_links(cable.pn[i - 1]))
                         )
                     manufacturer_info = pn_info_string(
                         HEADER_MPN,
@@ -395,11 +375,7 @@ class Harness:
                     )
                     supplier_info = pn_info_string(
                         HEADER_SPN,
-                        (
-                            cable.supplier[i - 1]
-                            if isinstance(cable.supplier, list)
-                            else None
-                        ),
+                        (cable.supplier[i - 1] if isinstance(cable.supplier, list) else None),
                         cable.spn[i - 1] if isinstance(cable.spn, list) else None,
                     )
                     if manufacturer_info:
@@ -427,9 +403,7 @@ class Harness:
                 if isinstance(cable.shield, str):
                     # shield is shown with specified color and black borders
                     shield_color_hex = wv_colors.get_color_hex(cable.shield)[0]
-                    attributes = (
-                        f'height="6" bgcolor="{shield_color_hex}" border="2" sides="tb"'
-                    )
+                    attributes = f'height="6" bgcolor="{shield_color_hex}" border="2" sides="tb"'
                 else:
                     # shield is shown as a thin black wire
                     attributes = f'height="2" bgcolor="#000000" border="0"'
@@ -440,9 +414,7 @@ class Harness:
             wirehtml.append("   <tr><td>&nbsp;</td></tr>")
             wirehtml.append("  </table>")
 
-            html = [
-                row.replace("<!-- wire table -->", "\n".join(wirehtml)) for row in html
-            ]
+            html = [row.replace("<!-- wire table -->", "\n".join(wirehtml)) for row in html]
 
             # connections
             for connection in cable.connections:
@@ -472,9 +444,7 @@ class Harness:
                     from_connector = self.connectors[connection.from_name]
                     from_pin_index = from_connector.pins.index(connection.from_pin)
                     from_port_str = (
-                        f":p{from_pin_index+1}r"
-                        if from_connector.style != "simple"
-                        else ""
+                        f":p{from_pin_index + 1}r" if from_connector.style != "simple" else ""
                     )
                     code_left_1 = f"{connection.from_name}{from_port_str}:e"
                     code_left_2 = f"{cable.name}:w{connection.via_port}:w"
@@ -498,9 +468,7 @@ class Harness:
                 if connection.to_pin is not None:  # connect to right
                     to_connector = self.connectors[connection.to_name]
                     to_pin_index = to_connector.pins.index(connection.to_pin)
-                    to_port_str = (
-                        f":p{to_pin_index+1}l" if to_connector.style != "simple" else ""
-                    )
+                    to_port_str = f":p{to_pin_index + 1}l" if to_connector.style != "simple" else ""
                     code_right_1 = f"{cable.name}:w{connection.via_port}:e"
                     code_right_2 = f"{connection.to_name}{to_port_str}:w"
                     dot.edge(code_right_1, code_right_2)
@@ -550,12 +518,12 @@ class Harness:
             to_connector = self.connectors[mate.to_name]
             if isinstance(mate, MatePin) and from_connector.style != "simple":
                 from_pin_index = from_connector.pins.index(mate.from_pin)
-                from_port_str = f":p{from_pin_index+1}r"
+                from_port_str = f":p{from_pin_index + 1}r"
             else:  # MateComponent or style == 'simple'
                 from_port_str = ""
             if isinstance(mate, MatePin) and to_connector.style != "simple":
                 to_pin_index = to_connector.pins.index(mate.to_pin)
-                to_port_str = f":p{to_pin_index+1}l"
+                to_port_str = f":p{to_pin_index + 1}l"
             else:  # MateComponent or style == 'simple'
                 to_port_str = ""
             code_from = f"{mate.from_name}{from_port_str}:e"
@@ -584,9 +552,7 @@ class Harness:
             for i, entry in enumerate(dot.body):
                 if isinstance(entry, str):
                     # Find a possibly quoted keyword after leading TAB(s) and followed by [ ].
-                    match = re.match(
-                        r'^\t*(")?((?(1)[^"]|[^ "])+)(?(1)") \[.*\]$', entry, re.S
-                    )
+                    match = re.match(r'^\t*(")?((?(1)[^"]|[^ "])+)(?(1)") \[.*\]$', entry, re.S)
                     keyword = match and match[2]
                     if keyword in self.tweak.override.keys():
                         for attr, value in self.tweak.override[keyword].items():

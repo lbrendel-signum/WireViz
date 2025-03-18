@@ -16,9 +16,7 @@ def nested_html_table(
     # purpose: create the appearance of one table, where cell widths are independent between rows
     # attributes in any leading <tdX> inside a list are injected into to the preceeding <td> tag
     html = []
-    html.append(
-        f'<table border="0" cellspacing="0" cellpadding="0"{table_attrs or ""}>'
-    )
+    html.append(f'<table border="0" cellspacing="0" cellpadding="0"{table_attrs or ""}>')
 
     num_rows = 0
     for row in rows:
@@ -79,7 +77,9 @@ def html_image(image):
      <td{html}</td>
     </tr></table>
    """
-    return f"""<tdX{' sides="TLR"' if image.caption else ''}{html_bgcolor_attr(image.bgcolor)}{html}"""
+    return (
+        f"""<tdX{' sides="TLR"' if image.caption else ""}{html_bgcolor_attr(image.bgcolor)}{html}"""
+    )
 
 
 def html_caption(image):

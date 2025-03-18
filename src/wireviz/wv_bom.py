@@ -51,16 +51,10 @@ def get_additional_component_table(
                     harness.bom(),
                     bom_entry_key({**asdict(part), "description": part.description}),
                 )
-                rows.append(
-                    component_table_entry(
-                        f"#{id} ({part.type.rstrip()})", **common_args
-                    )
-                )
+                rows.append(component_table_entry(f"#{id} ({part.type.rstrip()})", **common_args))
             else:
                 rows.append(
-                    component_table_entry(
-                        part.description, **common_args, **optional_fields(part)
-                    )
+                    component_table_entry(part.description, **common_args, **optional_fields(part))
                 )
     return rows
 
@@ -89,9 +83,7 @@ def get_additional_component_bom(component: Union[Connector, Cable]) -> List[BOM
 def bom_entry_key(entry: BOMEntry) -> BOMKey:
     """Return a tuple of string values from the dict that must be equal to join BOM entries."""
     if "key" not in entry:
-        entry["key"] = tuple(
-            clean_whitespace(make_str(entry.get(c))) for c in BOM_COLUMNS_IN_KEY
-        )
+        entry["key"] = tuple(clean_whitespace(make_str(entry.get(c))) for c in BOM_COLUMNS_IN_KEY)
     return entry["key"]
 
 
@@ -135,11 +127,7 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
                     "Cable"
                     + (f", {cable.type}" if cable.type else "")
                     + (f", {cable.wirecount}")
-                    + (
-                        f" x {cable.gauge} {cable.gauge_unit}"
-                        if cable.gauge
-                        else " wires"
-                    )
+                    + (f" x {cable.gauge} {cable.gauge_unit}" if cable.gauge else " wires")
                     + (" shielded" if cable.shield else "")
                     + (
                         f", {translate_color(cable.color, harness.options.color_mode)}"
@@ -189,24 +177,18 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
     bom_entries.extend(harness.additional_bom_items)
 
     # remove line breaks if present and cleanup any resulting whitespace issues
-    bom_entries = [
-        {k: clean_whitespace(v) for k, v in entry.items()} for entry in bom_entries
-    ]
+    bom_entries = [{k: clean_whitespace(v) for k, v in entry.items()} for entry in bom_entries]
 
     # deduplicate bom
     bom = []
     for _, group in groupby(sorted(bom_entries, key=bom_entry_key), key=bom_entry_key):
         group_entries = list(group)
-        designators = sum(
-            (make_list(entry.get("designators")) for entry in group_entries), []
-        )
+        designators = sum((make_list(entry.get("designators")) for entry in group_entries), [])
         total_qty = sum(entry.get("qty", 1) for entry in group_entries)
         bom.append(
             {
                 **group_entries[0],
-                "qty": int(total_qty)
-                if float(total_qty).is_integer()
-                else round(total_qty, 3),
+                "qty": int(total_qty) if float(total_qty).is_integer() else round(total_qty, 3),
                 "designators": sorted(set(designators)),
             }
         )
@@ -275,13 +257,11 @@ def component_table_entry(
   </tr></table>"""
 
 
-def pn_info_string(
-    header: str, name: Optional[str], number: Optional[str]
-) -> Optional[str]:
+def pn_info_string(header: str, name: Optional[str], number: Optional[str]) -> Optional[str]:
     """Return the company name and/or the part number in one single string or None otherwise."""
     number = str(number).strip() if number is not None else ""
     if name or number:
-        return f'{name if name else header}{": " + number if number else ""}'
+        return f"{name if name else header}{': ' + number if number else ''}"
     else:
         return None
 

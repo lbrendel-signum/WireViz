@@ -65,9 +65,7 @@ def generate_html_output(
         row_html = f"{row_html}  </tr>\n"
         bom_contents.append(row_html)
 
-    bom_html = (
-        '<table class="bom">\n' + bom_header_html + "".join(bom_contents) + "</table>\n"
-    )
+    bom_html = '<table class="bom">\n' + bom_header_html + "".join(bom_contents) + "</table>\n"
     bom_html_reversed = (
         '<table class="bom">\n'
         + "".join(list(reversed(bom_contents)))
@@ -86,9 +84,7 @@ def generate_html_output(
         "<!-- %bom_reversed% -->": bom_html_reversed,
         "<!-- %sheet_current% -->": "1",  # TODO: handle multi-page documents
         "<!-- %sheet_total% -->": "1",  # TODO: handle multi-page documents
-        "<!-- %template_sheetsize% -->": metadata.get("template", {}).get(
-            "sheetsize", ""
-        ),
+        "<!-- %template_sheetsize% -->": metadata.get("template", {}).get("sheetsize", ""),
     }
 
     def replacement_if_used(key: str, func: Callable[[], str]) -> None:
@@ -97,9 +93,7 @@ def generate_html_output(
             replacements[key] = func()
 
     replacement_if_used("<!-- %diagram% -->", svgdata)
-    replacement_if_used(
-        "<!-- %diagram_png_b64% -->", lambda: data_URI_base64(f"{filename}.png")
-    )
+    replacement_if_used("<!-- %diagram_png_b64% -->", lambda: data_URI_base64(f"{filename}.png"))
 
     # prepare metadata replacements
     if metadata:
@@ -109,11 +103,11 @@ def generate_html_output(
             elif isinstance(contents, Dict):  # useful for authors, revisions
                 for index, (category, entry) in enumerate(contents.items()):
                     if isinstance(entry, Dict):
-                        replacements[f"<!-- %{item}_{index+1}% -->"] = str(category)
+                        replacements[f"<!-- %{item}_{index + 1}% -->"] = str(category)
                         for entry_key, entry_value in entry.items():
-                            replacements[
-                                f"<!-- %{item}_{index+1}_{entry_key}% -->"
-                            ] = html_line_breaks(str(entry_value))
+                            replacements[f"<!-- %{item}_{index + 1}_{entry_key}% -->"] = (
+                                html_line_breaks(str(entry_value))
+                            )
                     elif isinstance(entry, (str, int, float)):
                         pass  # TODO?: replacements[f"<!-- %{item}_{category}% -->"] = html_line_breaks(str(entry))
 

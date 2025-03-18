@@ -16,9 +16,7 @@ def data_URI_base64(file: Union[str, Path], media: str = "image") -> str:
     uri = f"data:{media}/{get_mime_subtype(file)};base64, {b64}"
     # print(f"data_URI_base64('{file}', '{media}') -> {len(uri)}-character URI")
     if len(uri) > 65535:
-        print(
-            "data_URI_base64(): Warning: Browsers might have different URI length limitations"
-        )
+        print("data_URI_base64(): Warning: Browsers might have different URI length limitations")
     return uri
 
 
@@ -54,9 +52,7 @@ def get_mime_subtype(filename: Union[str, Path]) -> str:
     return mime_subtype
 
 
-def embed_svg_images_file(
-    filename_in: Union[str, Path], overwrite: bool = True
-) -> None:
+def embed_svg_images_file(filename_in: Union[str, Path], overwrite: bool = True) -> None:
     filename_in = Path(filename_in).resolve()
     filename_out = filename_in.with_suffix(".b64.svg")
     filename_out.write_text(  # TODO?: Verify xml encoding="utf-8" in SVG?

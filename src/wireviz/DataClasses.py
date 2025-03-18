@@ -19,18 +19,14 @@ Designator = PlainText  # Case insensitive unique name of connector or cable
 
 # Literal type aliases below are commented to avoid requiring python 3.8
 ConnectorMultiplier = PlainText  # = Literal['pincount', 'populated', 'unpopulated']
-CableMultiplier = (
-    PlainText  # = Literal['wirecount', 'terminations', 'length', 'total_length']
-)
+CableMultiplier = PlainText  # = Literal['wirecount', 'terminations', 'length', 'total_length']
 ImageScale = PlainText  # = Literal['false', 'true', 'width', 'height', 'both']
 
 # Type combinations
 Pin = Union[int, PlainText]  # Pin identifier
 PinIndex = int  # Zero-based pin index
 Wire = Union[int, PlainText]  # Wire number or Literal['s'] for shield
-NoneOrMorePins = Union[
-    Pin, Tuple[Pin, ...], None
-]  # None, one, or a tuple of pin identifiers
+NoneOrMorePins = Union[Pin, Tuple[Pin, ...], None]  # None, one, or a tuple of pin identifiers
 NoneOrMorePinIndices = Union[
     PinIndex, Tuple[PinIndex, ...], None
 ]  # None, one, or a tuple of zero-based pin indices
@@ -174,15 +170,11 @@ class Connector:
 
         if self.style == "simple":
             if self.pincount and self.pincount > 1:
-                raise Exception(
-                    "Connectors with style set to simple may only have one pin"
-                )
+                raise Exception("Connectors with style set to simple may only have one pin")
             self.pincount = 1
 
         if not self.pincount:
-            self.pincount = max(
-                len(self.pins), len(self.pinlabels), len(self.pincolors)
-            )
+            self.pincount = max(len(self.pins), len(self.pinlabels), len(self.pincolors))
             if not self.pincount:
                 raise Exception(
                     "You need to specify at least one, pincount, pins, pinlabels, or pincolors"
@@ -210,9 +202,7 @@ class Connector:
                 raise Exception("Loops must be between exactly two pins!")
             for pin in loop:
                 if pin not in self.pins:
-                    raise Exception(
-                        f'Unknown loop pin "{pin}" for connector "{self.name}"!'
-                    )
+                    raise Exception(f'Unknown loop pin "{pin}" for connector "{self.name}"!')
                 # Make sure loop connected pins are not hidden.
                 self.activate_pin(pin, None)
 
@@ -237,9 +227,7 @@ class Connector:
         elif qty_multiplier == "unpopulated":
             return max(0, self.pincount - sum(self.visible_pins.values()))
         else:
-            raise ValueError(
-                f"invalid qty multiplier parameter for connector {qty_multiplier}"
-            )
+            raise ValueError(f"invalid qty multiplier parameter for connector {qty_multiplier}")
 
 
 @dataclass
@@ -293,11 +281,11 @@ class Cable:
             if u.upper() == "AWG":
                 self.gauge_unit = u.upper()
             else:
-                self.gauge_unit = u.replace("mm2", "mm\u00B2")
+                self.gauge_unit = u.replace("mm2", "mm\u00b2")
 
         elif self.gauge is not None:  # gauge specified, assume mm2
             if self.gauge_unit is None:
-                self.gauge_unit = "mm\u00B2"
+                self.gauge_unit = "mm\u00b2"
         else:
             pass  # gauge not specified
 
@@ -348,9 +336,7 @@ class Cable:
 
         if self.wirelabels:
             if self.shield and "s" in self.wirelabels:
-                raise Exception(
-                    '"s" may not be used as a wire label for a shielded cable.'
-                )
+                raise Exception('"s" may not be used as a wire label for a shielded cable.')
 
         # if lists of part numbers are provided check this is a bundle and that it matches the wirecount.
         for idfield in [self.manufacturer, self.mpn, self.supplier, self.spn, self.pn]:
@@ -405,9 +391,7 @@ class Cable:
         elif qty_multiplier == "total_length":
             return self.length * self.wirecount
         else:
-            raise ValueError(
-                f"invalid qty multiplier parameter for cable {qty_multiplier}"
-            )
+            raise ValueError(f"invalid qty multiplier parameter for cable {qty_multiplier}")
 
 
 @dataclass

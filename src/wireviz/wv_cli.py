@@ -97,9 +97,7 @@ def wireviz(file, format, prepend, output_dir, output_name, version):
             raise Exception(f"Unknown output format: {code}")
     output_formats = tuple(sorted(set(output_formats)))
     output_formats_str = (
-        f'[{"|".join(output_formats)}]'
-        if len(output_formats) > 1
-        else output_formats[0]
+        f"[{'|'.join(output_formats)}]" if len(output_formats) > 1 else output_formats[0]
     )
 
     # check prepend file
@@ -126,9 +124,7 @@ def wireviz(file, format, prepend, output_dir, output_name, version):
         _output_name = file.stem if not output_name else output_name
 
         print("Input file:  ", file)
-        print(
-            "Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}"
-        )
+        print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
 
         yaml_input = file_read_text(file)
         file_dir = file.parent
