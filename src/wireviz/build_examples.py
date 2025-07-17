@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from wireviz import APP_NAME, __version__, wireviz
+from wireviz.helper import open_file_append, open_file_read, open_file_write
 import argparse
 import os
 import sys
@@ -9,9 +11,7 @@ from pathlib import Path
 script_path = Path(__file__).absolute()
 
 sys.path.insert(0, str(script_path.parent.parent))  # to find wireviz module
-from wireviz.helper import open_file_append, open_file_read, open_file_write
 
-from wireviz import APP_NAME, __version__, wireviz
 
 dir = script_path.parent.parent.parent
 readme = "readme.md"
@@ -60,7 +60,7 @@ def build_generated(groupkeys):
             include_readme = "md" in groups[key][readme]
             include_source = "yml" in groups[key][readme]
             with open_file_write(path / readme) as out:
-                out.write(f'# {groups[key]["title"]}\n\n')
+                out.write(f"# {groups[key]['title']}\n\n")
         # collect and iterate input YAML files
         for yaml_file in collect_filenames("Building", key, input_extensions):
             print(f'  "{yaml_file}"')

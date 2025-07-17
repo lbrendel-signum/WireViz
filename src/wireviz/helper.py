@@ -57,7 +57,7 @@ def expand(yaml_data):
                         output.append(x)  # descending range
                 else:  # a == b
                     output.append(a)  # range of length 1
-            except:
+            except Exception:
                 # '-' was not a delimiter between two ints, pass e through unchanged
                 output.append(e)
         else:
@@ -161,7 +161,7 @@ def aspect_ratio(image_src):
     return 1  # Assume 1:1 when unable to read actual image size
 
 
-def smart_file_resolve(filename: str, possible_paths: (str, List[str])) -> Path:
+def smart_file_resolve(filename: str, possible_paths: tuple[str, List[str]]) -> Path:
     if not isinstance(possible_paths, List):
         possible_paths = [possible_paths]
     filename = Path(filename)

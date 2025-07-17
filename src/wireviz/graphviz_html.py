@@ -62,7 +62,6 @@ def html_colorbar(color: Color) -> str:
 
 
 def html_image(image):
-
     if not image:
         return None
     # The leading attributes belong to the preceeding tag. See where used below.
@@ -81,7 +80,6 @@ def html_image(image):
 
 
 def html_caption(image):
-
     return (
         f'<tdX sides="BLR"{html_bgcolor_attr(image.bgcolor)}>{html_line_breaks(image.caption)}'
         if image and image.caption
@@ -90,7 +88,6 @@ def html_caption(image):
 
 
 def html_size_attr(image):
-
     # Return Graphviz HTML attributes to specify minimum or fixed size of a TABLE or TD object
     return (
         (

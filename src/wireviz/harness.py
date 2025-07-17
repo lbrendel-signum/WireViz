@@ -95,11 +95,11 @@ class Harness:
     def connect(
         self,
         from_name: str,
-        from_pin: (int, str),
+        from_pin: tuple[int, str],
         via_name: str,
-        via_wire: (int, str),
+        via_wire: tuple[int, str],
         to_name: str,
-        to_pin: (int, str),
+        to_pin: tuple[int, str],
     ) -> None:
         # check from and to connectors
         for name, pin in zip([from_name, to_name], [from_pin, to_pin]):
@@ -420,9 +420,7 @@ class Harness:
                         "edge",
                         color=":".join(
                             ["#000000"]
-                            + colors.get_color_hex(
-                                cable.colors[connection.via_port - 1], pad=pad
-                            )
+                            + colors.get_color_hex(cable.colors[connection.via_port - 1], pad=pad)
                             + ["#000000"]
                         ),
                     )
@@ -624,7 +622,7 @@ class Harness:
 
     def output(
         self,
-        filename: (str, Path),
+        filename: tuple[str, Path],
         view: bool = False,
         cleanup: bool = True,
         fmt: tuple = ("html", "png", "svg", "tsv"),

@@ -128,11 +128,11 @@ def parse(
     # parse YAML input file ====================================================
 
     sections = ["connectors", "cables", "connections"]
-    types = [dict, dict, list]
+    types: list[type] = [dict, dict, list]
     for sec, ty in zip(sections, types):
-        if sec in yaml_data and type(yaml_data[sec]) == ty:  # section exists
+        if sec in yaml_data and type(yaml_data[sec]) is ty:  # section exists
             if len(yaml_data[sec]) > 0:  # section has contents
-                if ty == dict:
+                if ty is dict:
                     for key, attribs in yaml_data[sec].items():
                         # The Image dataclass might need to open an image file with a relative path.
                         image = attribs.get("image")
@@ -148,9 +148,9 @@ def parse(
             else:  # section exists but is empty
                 pass
         else:  # section does not exist, create empty section
-            if ty == dict:
+            if ty is dict:
                 yaml_data[sec] = {}
-            elif ty == list:
+            elif ty is list:
                 yaml_data[sec] = []
 
     connection_sets = yaml_data["connections"]
@@ -372,7 +372,7 @@ def parse(
         return tuple(returns) if len(returns) != 1 else returns[0]
 
 
-def _get_yaml_data_and_path(inp: Union[str, Path, Dict]) -> (Dict, Path):
+def _get_yaml_data_and_path(inp: Union[str, Path, dict]) -> tuple[dict, Path]:
     # determine whether inp is a file path, a YAML string, or a Dict
     if not isinstance(inp, Dict):  # received a str or a Path
         try:
