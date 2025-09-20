@@ -7,6 +7,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import List
 
 script_path = Path(__file__).absolute()
 
@@ -42,7 +43,7 @@ generated_extensions = (
 )
 
 
-def collect_filenames(description, groupkey, ext_list):
+def collect_filenames(description: str, groupkey: str, ext_list: List[str]) -> List[Path]:
     path = groups[groupkey]["path"]
     patterns = [f"{groups[groupkey]['prefix']}*{ext}" for ext in ext_list]
     if ext_list != input_extensions and readme in groups[groupkey]:
@@ -51,7 +52,7 @@ def collect_filenames(description, groupkey, ext_list):
     return sorted([filename for pattern in patterns for filename in path.glob(pattern)])
 
 
-def build_generated(groupkeys):
+def build_generated(groupkeys: List[str]) -> None:
     for key in groupkeys:
         # preparation
         path = groups[key]["path"]
@@ -92,7 +93,7 @@ def build_generated(groupkeys):
                     )
 
 
-def clean_generated(groupkeys):
+def clean_generated(groupkeys: List[str]) -> None:
     for key in groupkeys:
         # collect and remove files
         for filename in collect_filenames("Cleaning", key, generated_extensions):
@@ -101,7 +102,7 @@ def clean_generated(groupkeys):
                 Path(filename).unlink()
 
 
-def compare_generated(groupkeys, branch="", include_graphviz_output=False):
+def compare_generated(groupkeys: List[str], branch: str = "", include_graphviz_output: bool = False) -> None:
     if branch:
         branch = f" {branch.strip()}"
     compare_extensions = (
@@ -117,7 +118,7 @@ def compare_generated(groupkeys, branch="", include_graphviz_output=False):
             os.system(cmd)
 
 
-def restore_generated(groupkeys, branch=""):
+def restore_generated(groupkeys: List[str], branch: str = "") -> None:
     if branch:
         branch = f" {branch.strip()}"
     for key in groupkeys:
@@ -136,7 +137,7 @@ def restore_generated(groupkeys, branch=""):
             os.system(cmd)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=f"{APP_NAME} Example Manager",
     )
@@ -178,7 +179,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
     args = parse_args()
     if args.action == "build":
         build_generated(args.groups)

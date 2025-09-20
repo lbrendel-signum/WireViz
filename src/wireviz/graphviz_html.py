@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
-from wireviz.data import Color
+from wireviz.data import Color, Image
 from wireviz.colors import translate_color
 from wireviz.helper import remove_links
 
 
 def nested_html_table(
     rows: List[Union[str, List[Optional[str]], None]], table_attrs: str = ""
-) -> str:
+) -> List[str]:
     # input: list, each item may be scalar or list
     # output: a parent table with one child table per parent item that is list, and one cell per parent item that is scalar
     # purpose: create the appearance of one table, where cell widths are independent between rows
@@ -61,7 +61,7 @@ def html_colorbar(color: Color) -> str:
     return html_bgcolor(color, ' width="4"') if color else None
 
 
-def html_image(image):
+def html_image(image: Optional[Image]) -> Optional[str]:
     if not image:
         return None
     # The leading attributes belong to the preceeding tag. See where used below.
@@ -79,7 +79,7 @@ def html_image(image):
     )
 
 
-def html_caption(image):
+def html_caption(image: Optional[Image]) -> Optional[str]:
     return (
         f'<tdX sides="BLR"{html_bgcolor_attr(image.bgcolor)}>{html_line_breaks(image.caption)}'
         if image and image.caption
@@ -87,7 +87,7 @@ def html_caption(image):
     )
 
 
-def html_size_attr(image):
+def html_size_attr(image: Optional[Image]) -> str:
     # Return Graphviz HTML attributes to specify minimum or fixed size of a TABLE or TD object
     return (
         (
@@ -100,5 +100,5 @@ def html_size_attr(image):
     )
 
 
-def html_line_breaks(inp):
+def html_line_breaks(inp: Any) -> Any:
     return remove_links(inp).replace("\n", "<br />") if isinstance(inp, str) else inp

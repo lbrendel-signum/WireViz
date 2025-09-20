@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import List
+from typing import Any, List, Optional, TextIO, Tuple, Union
 
 awg_equiv_table = {
     "0.09": "28",
@@ -26,15 +26,15 @@ awg_equiv_table = {
 mm2_equiv_table = {v: k for k, v in awg_equiv_table.items()}
 
 
-def awg_equiv(mm2):
+def awg_equiv(mm2: Union[str, int, float]) -> str:
     return awg_equiv_table.get(str(mm2), "Unknown")
 
 
-def mm2_equiv(awg):
+def mm2_equiv(awg: Union[str, int]) -> str:
     return mm2_equiv_table.get(str(awg), "Unknown")
 
 
-def expand(yaml_data):
+def expand(yaml_data: Union[Any, List[Any]]) -> List[Union[int, str]]:
     # yaml_data can be:
     # - a singleton (normally str or int)
     # - a list of str or int
@@ -69,13 +69,13 @@ def expand(yaml_data):
     return output
 
 
-def get_single_key_and_value(d: dict):
+def get_single_key_and_value(d: dict) -> Tuple[Any, Any]:
     k = list(d.keys())[0]
     v = d[k]
     return (k, v)
 
 
-def int2tuple(inp):
+def int2tuple(inp: Any) -> Tuple[Any, ...]:
     if isinstance(inp, tuple):
         output = inp
     else:
@@ -83,14 +83,14 @@ def int2tuple(inp):
     return output
 
 
-def flatten2d(inp):
+def flatten2d(inp: List[List[Any]]) -> List[List[str]]:
     return [
         [str(item) if not isinstance(item, List) else ", ".join(item) for item in row]
         for row in inp
     ]
 
 
-def tuplelist2tsv(inp, header=None):
+def tuplelist2tsv(inp: List[List[Any]], header: Optional[List[str]] = None) -> str:
     output = ""
     if header is not None:
         inp.insert(0, header)
@@ -100,26 +100,26 @@ def tuplelist2tsv(inp, header=None):
     return output
 
 
-def remove_links(inp):
+def remove_links(inp: Any) -> Any:
     return re.sub(r"<[aA] [^>]*>([^<]*)</[aA]>", r"\1", inp) if isinstance(inp, str) else inp
 
 
-def clean_whitespace(inp):
+def clean_whitespace(inp: Any) -> Any:
     return " ".join(inp.split()).replace(" ,", ",") if isinstance(inp, str) else inp
 
 
-def open_file_read(filename):
+def open_file_read(filename: Union[str, Path]) -> TextIO:
     """Open utf-8 encoded text file for reading - remember closing it when finished"""
     # TODO: Intelligently determine encoding
     return open(filename, "r", encoding="UTF-8")
 
 
-def open_file_write(filename):
+def open_file_write(filename: Union[str, Path]) -> TextIO:
     """Open utf-8 encoded text file for writing - remember closing it when finished"""
     return open(filename, "w", encoding="UTF-8")
 
 
-def open_file_append(filename):
+def open_file_append(filename: Union[str, Path]) -> TextIO:
     """Open utf-8 encoded text file for appending - remember closing it when finished"""
     return open(filename, "a", encoding="UTF-8")
 
@@ -134,7 +134,7 @@ def file_write_text(filename: str, text: str) -> int:
     return Path(filename).write_text(text, encoding="utf-8")
 
 
-def is_arrow(inp):
+def is_arrow(inp: Any) -> bool:
     """
     Matches strings of one or multiple `-` or `=` (but not mixed)
     optionally starting with `<` and/or ending with `>`.
@@ -147,7 +147,7 @@ def is_arrow(inp):
     return bool(re.match(r"^\s*(?P<leftHead><?)(?P<body>-+|=+)(?P<rightHead>>?)\s*$", inp))
 
 
-def aspect_ratio(image_src):
+def aspect_ratio(image_src: Union[str, Path]) -> float:
     try:
         from PIL import Image
 
@@ -161,7 +161,7 @@ def aspect_ratio(image_src):
     return 1  # Assume 1:1 when unable to read actual image size
 
 
-def smart_file_resolve(filename: str, possible_paths: tuple[str, List[str]]) -> Path:
+def smart_file_resolve(filename: str, possible_paths: Union[str, Path, List[Union[str, Path]]]) -> Path:
     if not isinstance(possible_paths, List):
         possible_paths = [possible_paths]
     filename = Path(filename)

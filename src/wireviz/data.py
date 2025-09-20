@@ -54,7 +54,7 @@ class Options:
     mini_bom_mode: bool = True
     template_separator: str = "."
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.bgcolor_node:
             self.bgcolor_node = self.bgcolor
         if not self.bgcolor_connector:
@@ -85,7 +85,7 @@ class Image:
     caption: Optional[MultilineHypertext] = None
     # See also HTML doc at https://graphviz.org/doc/info/shapes.html#html
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.fixedsize is None:
             # Default True if any dimension specified unless self.scale also is specified.
             self.fixedsize = (self.width or self.height) and self.scale is None

@@ -34,7 +34,7 @@ def wireviz(
     prepend: Optional[list[str]] = None,
     output_dir: Optional[Path] = ".\\",
     version: Optional[bool] = False,
-):
+) -> None:
     """
     Parses the provided FILE and generates the specified outputs.
     """
