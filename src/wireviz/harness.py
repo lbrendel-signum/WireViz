@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 from graphviz import Graph
 from wireviz import APP_NAME, APP_URL, __version__, colors
@@ -67,7 +67,7 @@ class Harness:
     options: Options
     tweak: Tweak
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.connectors = {}
         self.cables = {}
         self.mates = []
@@ -600,13 +600,13 @@ class Harness:
     _graph = None
 
     @property
-    def graph(self):
+    def graph(self) -> Graph:
         if not self._graph:  # no cached graph exists, generate one
             self._graph = self.create_graph()
         return self._graph  # return cached graph
 
     @property
-    def png(self):
+    def png(self) -> bytes:
         from io import BytesIO
 
         graph = self.graph
@@ -616,7 +616,7 @@ class Harness:
         return data.read()
 
     @property
-    def svg(self):  # TODO?: Verify xml encoding="utf-8" in SVG?
+    def svg(self) -> str:  # TODO?: Verify xml encoding="utf-8" in SVG?
         graph = self.graph
         return embed_svg_images(graph.pipe(format="svg").decode("utf-8"), Path.cwd())
 
@@ -666,7 +666,7 @@ class Harness:
         elif "svg" in fmt:
             Path(f"{filename}.tmp.svg").replace(f"{filename}.svg")
 
-    def bom(self):
+    def bom(self) -> List["BOMEntry"]:
         if not self._bom:
             self._bom = generate_bom(self)
         return self._bom

@@ -425,7 +425,7 @@ def _get_output_name(input_file: Path, default_output_name: Path) -> str:
     return output_name
 
 
-def main():
+def main() -> None:
     print("When running from the command line, please use wv_cli.py instead.")
 
 

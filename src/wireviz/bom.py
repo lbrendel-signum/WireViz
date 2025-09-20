@@ -273,7 +273,7 @@ def index_if_list(value: Any, index: int) -> Any:
     return value[index] if isinstance(value, list) else value
 
 
-def make_list(value: Any) -> list:
+def make_list(value: Any) -> List[Any]:
     """Return value if a list, empty list if None, or single element list otherwise."""
     return value if isinstance(value, list) else [] if value is None else [value]
 
