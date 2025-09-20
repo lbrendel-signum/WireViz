@@ -3,7 +3,7 @@
 
 from wireviz import APP_NAME, __version__, wireviz
 from wireviz.helper import open_file_append, open_file_read, open_file_write
-import argparse
+import typer
 import os
 import sys
 from pathlib import Path
@@ -137,59 +137,68 @@ def restore_generated(groupkeys: List[str], branch: str = "") -> None:
             os.system(cmd)
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=f"{APP_NAME} Example Manager",
-    )
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=f"%(prog)s - {APP_NAME} {__version__}",
-    )
-    parser.add_argument(
-        "action",
-        nargs="?",
-        action="store",
-        choices=["build", "clean", "compare", "diff", "restore"],
-        default="build",
+def version_callback(value: bool):
+    if value:
+        typer.echo(f"{APP_NAME} Example Manager - {APP_NAME} {__version__}")
+        raise typer.Exit()
+
+
+def main(
+    action: str = typer.Argument(
+        "build",
         help="what to do with the generated files (default: build)",
-    )
-    parser.add_argument(
+    ),
+    compare_graphviz_output: bool = typer.Option(
+        False,
         "-c",
         "--compare-graphviz-output",
-        action="store_true",
         help="the Graphviz output is also compared (default: False)",
-    )
-    parser.add_argument(
+    ),
+    branch: str = typer.Option(
+        "",
         "-b",
         "--branch",
-        action="store",
-        default="",
         help="branch or commit to compare with or restore from",
-    )
-    parser.add_argument(
+    ),
+    group_list: List[str] = typer.Option(
+        list(groups.keys()),
         "-g",
         "--groups",
-        nargs="+",
-        choices=groups.keys(),
-        default=groups.keys(),
-        help="the groups of generated files (default: all)",
-    )
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = parse_args()
-    if args.action == "build":
-        build_generated(args.groups)
-    elif args.action == "clean":
-        clean_generated(args.groups)
-    elif args.action == "compare" or args.action == "diff":
-        compare_generated(args.groups, args.branch, args.compare_graphviz_output)
-    elif args.action == "restore":
-        restore_generated(args.groups, args.branch)
+        help="the groups of generated files (default: all). Use multiple times: --groups examples --groups tutorial",
+    ),
+    version: bool = typer.Option(
+        False,
+        "-V",
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="show program's version number and exit",
+    ),
+) -> None:
+    """WireViz Example Manager"""
+    
+    # Validate action choice
+    valid_actions = ["build", "clean", "compare", "diff", "restore"]
+    if action not in valid_actions:
+        typer.echo(f"Error: Invalid action '{action}'. Must be one of: {', '.join(valid_actions)}")
+        raise typer.Exit(code=1)
+    
+    # Validate groups
+    valid_groups = list(groups.keys())
+    for group in group_list:
+        if group not in valid_groups:
+            typer.echo(f"Error: Invalid group '{group}'. Must be one of: {', '.join(valid_groups)}")
+            raise typer.Exit(code=1)
+    
+    if action == "build":
+        build_generated(group_list)
+    elif action == "clean":
+        clean_generated(group_list)
+    elif action == "compare" or action == "diff":
+        compare_generated(group_list, branch, compare_graphviz_output)
+    elif action == "restore":
+        restore_generated(group_list, branch)
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
