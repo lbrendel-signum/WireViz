@@ -21,7 +21,7 @@ def generate_html_output(
     bom_list: List[List[str]],
     metadata: Metadata,
     options: Options,
-):
+) -> None:
     # load HTML template
     templatename = metadata.get("template", {}).get("name")
     if templatename:
