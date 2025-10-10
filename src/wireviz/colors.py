@@ -319,6 +319,19 @@ def get_color_translation(translate: Dict[Color, str], input: Colors) -> List[st
 
 
 def translate_color(input: Colors, color_mode: ColorMode) -> str:
+    """Translate color codes to the specified color mode format.
+    
+    Args:
+        input: Color code(s) as a string (concatenated two-letter codes or hex).
+        color_mode: Mode to translate to ('full', 'FULL', 'hex', 'HEX', 
+                   'short', 'SHORT', 'ger', 'GER'). Case indicates output case.
+    
+    Returns:
+        Translated color string in the specified format.
+        
+    Raises:
+        Exception: If color_mode is invalid.
+    """
     if input == "" or input is None:
         return ""
     upper = color_mode.isupper()

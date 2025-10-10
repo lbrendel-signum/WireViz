@@ -39,11 +39,29 @@ Side = Enum("Side", "LEFT RIGHT")
 
 
 class Metadata(dict):
+    """Dictionary subclass for storing harness metadata.
+    
+    Metadata can contain various keys including 'title', 'description', 'notes', etc.
+    All values are used in HTML generation and templating.
+    """
     pass
 
 
 @dataclass
 class Options:
+    """Configuration options for harness diagram generation.
+    
+    Attributes:
+        fontname: Font name to use in the diagram. Defaults to "arial".
+        bgcolor: Background color for the diagram. Defaults to "WH" (white).
+        bgcolor_node: Background color for nodes. If None, uses bgcolor.
+        bgcolor_connector: Background color for connectors. If None, uses bgcolor_node.
+        bgcolor_cable: Background color for cables. If None, uses bgcolor_node.
+        bgcolor_bundle: Background color for bundles. If None, uses bgcolor_cable.
+        color_mode: Color representation mode. Defaults to "SHORT".
+        mini_bom_mode: Whether to use mini BOM mode. Defaults to True.
+        template_separator: Separator for template fields. Defaults to ".".
+    """
     fontname: PlainText = "arial"
     bgcolor: Color = "WH"
     bgcolor_node: Optional[Color] = "WH"
@@ -67,12 +85,32 @@ class Options:
 
 @dataclass
 class Tweak:
+    """Tweaks for customizing Graphviz diagram output.
+    
+    Attributes:
+        override: Dictionary mapping designators to attribute overrides.
+        append: String or list of strings to append to Graphviz output.
+    """
     override: Optional[Dict[Designator, Dict[str, Optional[str]]]] = None
     append: Union[str, List[str], None] = None
 
 
 @dataclass
 class Image:
+    """Image configuration for connectors and cables.
+    
+    Attributes:
+        src: Path to the image file.
+        scale: Scaling mode for the image. Can be 'false', 'true', 'width', 'height', or 'both'.
+        width: Width in points of the image cell.
+        height: Height in points of the image cell.
+        fixedsize: Whether to use fixed size for the image cell.
+        bgcolor: Background color for the image cell.
+        caption: Text caption to display below the image.
+    
+    Note:
+        See Graphviz HTML documentation at https://graphviz.org/doc/info/shapes.html#html
+    """
     # Attributes of the image object <img>:
     src: str
     scale: Optional[ImageScale] = None
@@ -111,6 +149,21 @@ class Image:
 
 @dataclass
 class AdditionalComponent:
+    """Additional component to be included in BOM.
+    
+    Attributes:
+        type: Component type description.
+        subtype: Component subtype description.
+        manufacturer: Manufacturer name.
+        mpn: Manufacturer part number.
+        supplier: Supplier name.
+        spn: Supplier part number.
+        pn: General part number.
+        qty: Quantity of the component. Defaults to 1.
+        unit: Unit of measurement for quantity.
+        qty_multiplier: Multiplier for quantity based on connector/cable properties.
+        bgcolor: Background color for the component in diagrams.
+    """
     type: MultilineHypertext
     subtype: Optional[MultilineHypertext] = None
     manufacturer: Optional[MultilineHypertext] = None
@@ -133,6 +186,35 @@ class AdditionalComponent:
 
 @dataclass
 class Connector:
+    """Connector component in a harness.
+    
+    Attributes:
+        name: Unique designator for the connector.
+        bgcolor: Background color for the connector node.
+        bgcolor_title: Background color for the connector title.
+        manufacturer: Manufacturer name.
+        mpn: Manufacturer part number.
+        supplier: Supplier name.
+        spn: Supplier part number.
+        pn: General part number.
+        style: Connector style (e.g., 'simple' for single-pin connectors).
+        category: Connector category.
+        type: Connector type description.
+        subtype: Connector subtype description.
+        pincount: Number of pins in the connector.
+        image: Optional image for the connector.
+        notes: Additional notes about the connector.
+        pins: List of pin identifiers.
+        pinlabels: List of pin labels.
+        pincolors: List of pin colors.
+        color: Overall connector color.
+        show_name: Whether to show the connector name in diagrams.
+        show_pincount: Whether to show the pin count in diagrams.
+        hide_disconnected_pins: Whether to hide pins with no connections.
+        loops: List of pin pairs that form loops.
+        ignore_in_bom: Whether to exclude this connector from the BOM.
+        additional_components: List of additional components associated with this connector.
+    """
     name: Designator
     bgcolor: Optional[Color] = None
     bgcolor_title: Optional[Color] = None
@@ -231,6 +313,38 @@ class Connector:
 
 @dataclass
 class Cable:
+    """Cable or wire bundle in a harness.
+    
+    Attributes:
+        name: Unique designator for the cable.
+        bgcolor: Background color for the cable node.
+        bgcolor_title: Background color for the cable title.
+        manufacturer: Manufacturer name(s), can be a list for bundles.
+        mpn: Manufacturer part number(s), can be a list for bundles.
+        supplier: Supplier name(s), can be a list for bundles.
+        spn: Supplier part number(s), can be a list for bundles.
+        pn: General part number(s), can be a list for bundles.
+        category: Cable category (e.g., 'bundle').
+        type: Cable type description.
+        gauge: Wire gauge value.
+        gauge_unit: Unit for wire gauge (e.g., 'AWG', 'mm²').
+        show_equiv: Whether to show equivalent gauge in other units.
+        length: Cable length.
+        length_unit: Unit for cable length (e.g., 'm', 'ft').
+        color: Overall cable color.
+        wirecount: Number of wires in the cable.
+        shield: Whether the cable has a shield, or the shield color.
+        image: Optional image for the cable.
+        notes: Additional notes about the cable.
+        colors: List of wire colors.
+        wirelabels: List of wire labels.
+        color_code: Standard color code scheme to use.
+        show_name: Whether to show the cable name in diagrams.
+        show_wirecount: Whether to show the wire count in diagrams.
+        show_wirenumbers: Whether to show wire numbers in diagrams.
+        ignore_in_bom: Whether to exclude this cable from the BOM.
+        additional_components: List of additional components associated with this cable.
+    """
     name: Designator
     bgcolor: Optional[Color] = None
     bgcolor_title: Optional[Color] = None
@@ -395,6 +509,15 @@ class Cable:
 
 @dataclass
 class Connection:
+    """Connection between a pin and a wire.
+    
+    Attributes:
+        from_name: Source connector or cable designator.
+        from_pin: Source pin identifier.
+        via_port: Wire identifier through which the connection passes.
+        to_name: Destination connector or cable designator.
+        to_pin: Destination pin identifier.
+    """
     from_name: Optional[Designator]
     from_pin: Optional[Pin]
     via_port: Wire
@@ -404,6 +527,15 @@ class Connection:
 
 @dataclass
 class MatePin:
+    """Direct pin-to-pin mating connection between connectors.
+    
+    Attributes:
+        from_name: Source connector designator.
+        from_pin: Source pin identifier.
+        to_name: Destination connector designator.
+        to_pin: Destination pin identifier.
+        shape: Arrow shape/style for the connection.
+    """
     from_name: Designator
     from_pin: Pin
     to_name: Designator
@@ -413,6 +545,13 @@ class MatePin:
 
 @dataclass
 class MateComponent:
+    """Direct component-to-component mating connection.
+    
+    Attributes:
+        from_name: Source connector designator.
+        to_name: Destination connector designator.
+        shape: Arrow shape/style for the connection.
+    """
     from_name: Designator
     to_name: Designator
     shape: str

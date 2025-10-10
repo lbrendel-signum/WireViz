@@ -21,6 +21,17 @@ def data_URI_base64(file: Union[str, Path], media: str = "image") -> str:
 
 
 def embed_svg_images(svg_in: str, base_path: Union[str, Path] = Path.cwd()) -> str:
+    """Embed external images in SVG as Base64 data URIs.
+    
+    Replaces external image references in SVG with embedded Base64-encoded data URIs.
+    
+    Args:
+        svg_in: SVG content as a string.
+        base_path: Base path for resolving relative image paths. Defaults to current directory.
+        
+    Returns:
+        SVG content with images embedded as data URIs.
+    """
     images_b64 = {}  # cache of base64-encoded images
 
     def image_tag(pre: str, url: str, post: str) -> str:
@@ -46,6 +57,14 @@ def embed_svg_images(svg_in: str, base_path: Union[str, Path] = Path.cwd()) -> s
 
 
 def get_mime_subtype(filename: Union[str, Path]) -> str:
+    """Get MIME subtype from filename extension.
+    
+    Args:
+        filename: Path to file with extension.
+        
+    Returns:
+        MIME subtype (e.g., 'jpeg' for .jpg files).
+    """
     mime_subtype = Path(filename).suffix.lstrip(".").lower()
     if mime_subtype in mime_subtype_replacements:
         mime_subtype = mime_subtype_replacements[mime_subtype]
@@ -53,6 +72,12 @@ def get_mime_subtype(filename: Union[str, Path]) -> str:
 
 
 def embed_svg_images_file(filename_in: Union[str, Path], overwrite: bool = True) -> None:
+    """Embed images in an SVG file and optionally overwrite the original.
+    
+    Args:
+        filename_in: Path to input SVG file.
+        overwrite: If True, replaces the original file. If False, creates a .b64.svg file.
+    """
     filename_in = Path(filename_in).resolve()
     filename_out = filename_in.with_suffix(".b64.svg")
     filename_out.write_text(  # TODO?: Verify xml encoding="utf-8" in SVG?
