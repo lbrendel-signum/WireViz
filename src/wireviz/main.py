@@ -117,8 +117,8 @@ def wireviz(
                         if p:  # Only add non-empty prepend paths
                             image_paths.add(Path(p).parent)
 
-                progress.update(task1, description="[cyan]Making connections...")
-                
+                progress.update(task1, description="[cyan]Building harness connections...")
+
                 wv.parse(
                     yaml_input,
                     output_formats=output_formats,
@@ -126,10 +126,17 @@ def wireviz(
                     output_name=_output_name,
                     image_paths=list(image_paths),
                 )
-                
+
                 progress.update(task1, description="[green]✓ Complete")
-            
-            console.print(f"[dim]Output files: {Path(_output_dir / _output_name)}.{output_formats_str}[/dim]")
+
+            # Show individual output files
+            console.print("[dim]Generated files:[/dim]")
+            for fmt in output_formats:
+                if fmt == "tsv":
+                    output_path = Path(_output_dir) / f"{_output_name}.bom.{fmt}"
+                else:
+                    output_path = Path(_output_dir) / f"{_output_name}.{fmt}"
+                console.print(f"  [dim]→[/dim] {output_path}")
         else:
             print("Input file:  ", f)
             print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
