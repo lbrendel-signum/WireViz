@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -13,6 +15,9 @@ if __name__ == "__main__":
 import wireviz.wireviz as wv
 from wireviz import APP_NAME, __version__
 from wireviz.helper import file_read_text
+
+# Global console for rich output
+console = Console()
 
 app = typer.Typer()
 
@@ -34,12 +39,16 @@ def wireviz(
     prepend: Optional[list[str]] = None,
     output_dir: Optional[Path] = ".\\",
     version: Optional[bool] = False,
+    verbose: Optional[bool] = False,
 ) -> None:
     """
     Parses the provided FILE and generates the specified outputs.
     """
-    print()
-    print(f"{APP_NAME} {__version__}")
+    if verbose:
+        console.print(f"\n[bold cyan]{APP_NAME}[/bold cyan] [cyan]{__version__}[/cyan]")
+    else:
+        print()
+        print(f"{APP_NAME} {__version__}")
     if version:
         return  # print version number only and exit
 
@@ -64,13 +73,16 @@ def wireviz(
     )
 
     # check prepend file
-    if len(prepend) > 0:
+    if prepend and len(prepend) > 0:
         prepend_input = ""
         for prepend_file in prepend:
             prepend_file = Path(prepend_file)
             if not prepend_file.exists():
                 raise Exception(f"File does not exist:\n{prepend_file}")
-            print("Prepend file:", prepend_file)
+            if verbose:
+                console.print(f"[dim]Prepend file: {prepend_file}[/dim]")
+            else:
+                print("Prepend file:", prepend_file)
 
             prepend_input += file_read_text(prepend_file) + "\n"
     else:
@@ -86,26 +98,62 @@ def wireviz(
         _output_dir = f.parent if not output_dir else output_dir
         _output_name = f.stem if not output_name else output_name
 
-        print("Input file:  ", f)
-        print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
+        if verbose:
+            console.print(f"\n[bold]Processing:[/bold] [green]{f}[/green]")
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+                transient=True,
+            ) as progress:
+                task1 = progress.add_task("[cyan]Parsing input file...", total=None)
+                yaml_input = file_read_text(f)
+                file_dir = f.parent
 
-        yaml_input = file_read_text(f)
-        file_dir = f.parent
+                yaml_input = prepend_input + yaml_input
+                image_paths = {file_dir}
+                if prepend:
+                    for p in prepend:
+                        if p:  # Only add non-empty prepend paths
+                            image_paths.add(Path(p).parent)
 
-        yaml_input = prepend_input + yaml_input
-        image_paths = {file_dir}
-        for p in prepend:
-            image_paths.add(Path(p).parent)
+                progress.update(task1, description="[cyan]Making connections...")
+                
+                wv.parse(
+                    yaml_input,
+                    output_formats=output_formats,
+                    output_dir=_output_dir,
+                    output_name=_output_name,
+                    image_paths=list(image_paths),
+                )
+                
+                progress.update(task1, description="[green]✓ Complete")
+            
+            console.print(f"[dim]Output files: {Path(_output_dir / _output_name)}.{output_formats_str}[/dim]")
+        else:
+            print("Input file:  ", f)
+            print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
 
-        wv.parse(
-            yaml_input,
-            output_formats=output_formats,
-            output_dir=_output_dir,
-            output_name=_output_name,
-            image_paths=list(image_paths),
-        )
+            yaml_input = file_read_text(f)
+            file_dir = f.parent
 
-    print()
+            yaml_input = prepend_input + yaml_input
+            image_paths = {file_dir}
+            if prepend:
+                for p in prepend:
+                    if p:  # Only add non-empty prepend paths
+                        image_paths.add(Path(p).parent)
+
+            wv.parse(
+                yaml_input,
+                output_formats=output_formats,
+                output_dir=_output_dir,
+                output_name=_output_name,
+                image_paths=list(image_paths),
+            )
+
+    if not verbose:
+        print()
 
 
 if __name__ == "__main__":
