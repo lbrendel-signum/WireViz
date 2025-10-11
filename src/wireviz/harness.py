@@ -63,6 +63,17 @@ def check_old(node: str, old_attr: dict, args: dict) -> None:
 
 @dataclass
 class Harness:
+    """Wire harness containing connectors, cables, and their connections.
+    
+    This is the main class representing a complete wire harness with all its
+    components and relationships. It manages connectors, cables, mate connections,
+    and generates various output formats including diagrams and BOMs.
+    
+    Attributes:
+        metadata: Metadata information for the harness.
+        options: Configuration options for diagram generation.
+        tweak: Graphviz output customization settings.
+    """
     metadata: Metadata
     options: Options
     tweak: Tweak
