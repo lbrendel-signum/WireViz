@@ -44,6 +44,16 @@ generated_extensions = (
 
 
 def collect_filenames(description: str, groupkey: str, ext_list: List[str]) -> List[Path]:
+    """Collect filenames matching extensions for a specific group.
+    
+    Args:
+        description: Description of the action (e.g., "Building", "Cleaning").
+        groupkey: Key identifying the file group to process.
+        ext_list: List of file extensions to match.
+        
+    Returns:
+        Sorted list of matching file paths.
+    """
     path = groups[groupkey]["path"]
     patterns = [f"{groups[groupkey]['prefix']}*{ext}" for ext in ext_list]
     if ext_list != input_extensions and readme in groups[groupkey]:
@@ -53,6 +63,11 @@ def collect_filenames(description: str, groupkey: str, ext_list: List[str]) -> L
 
 
 def build_generated(groupkeys: List[str]) -> None:
+    """Build generated files (diagrams, BOMs, etc.) from YAML input files.
+    
+    Args:
+        groupkeys: List of group keys to process.
+    """
     for key in groupkeys:
         # preparation
         path = groups[key]["path"]
@@ -94,6 +109,11 @@ def build_generated(groupkeys: List[str]) -> None:
 
 
 def clean_generated(groupkeys: List[str]) -> None:
+    """Remove all generated files for specified groups.
+    
+    Args:
+        groupkeys: List of group keys to clean.
+    """
     for key in groupkeys:
         # collect and remove files
         for filename in collect_filenames("Cleaning", key, generated_extensions):
@@ -103,6 +123,13 @@ def clean_generated(groupkeys: List[str]) -> None:
 
 
 def compare_generated(groupkeys: List[str], branch: str = "", include_graphviz_output: bool = False) -> None:
+    """Compare generated files with those in a git branch.
+    
+    Args:
+        groupkeys: List of group keys to compare.
+        branch: Git branch or commit to compare against. Empty string for staged changes.
+        include_graphviz_output: Whether to include Graphviz output files (PNG, SVG, HTML) in comparison.
+    """
     if branch:
         branch = f" {branch.strip()}"
     compare_extensions = (
@@ -119,6 +146,12 @@ def compare_generated(groupkeys: List[str], branch: str = "", include_graphviz_o
 
 
 def restore_generated(groupkeys: List[str], branch: str = "") -> None:
+    """Restore generated files from a git branch.
+    
+    Args:
+        groupkeys: List of group keys to restore.
+        branch: Git branch or commit to restore from. Empty string for HEAD.
+    """
     if branch:
         branch = f" {branch.strip()}"
     for key in groupkeys:
@@ -138,6 +171,11 @@ def restore_generated(groupkeys: List[str], branch: str = "") -> None:
 
 
 def version_callback(value: bool):
+    """Typer callback to display version and exit.
+    
+    Args:
+        value: If True, displays version and exits.
+    """
     if value:
         typer.echo(f"{APP_NAME} Example Manager - {APP_NAME} {__version__}")
         raise typer.Exit()

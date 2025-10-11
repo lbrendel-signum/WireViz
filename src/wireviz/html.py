@@ -22,6 +22,17 @@ def generate_html_output(
     metadata: Metadata,
     options: Options,
 ) -> None:
+    """Generate HTML output file from template with diagram and BOM.
+    
+    Creates an HTML file by loading a template, embedding the SVG diagram,
+    generating a BOM table, and replacing placeholders with actual values.
+    
+    Args:
+        filename: Base filename (without extension) for output files.
+        bom_list: Bill of materials as a list of rows.
+        metadata: Metadata information including template settings.
+        options: Configuration options for output generation.
+    """
     # load HTML template
     templatename = metadata.get("template", {}).get("name")
     if templatename:
