@@ -36,11 +36,12 @@ def wireviz(
     prepend: list[str] | None = None,
     output_dir: Path | None = ".\\",
     version: bool | None = False,
+    quiet: bool | None = False,
 ) -> None:
     """
     Parses the provided FILE and generates the specified outputs.
     """
-    if verbose:
+    if not quiet:
         console.print(f"\n[bold cyan]{APP_NAME}[/bold cyan] [cyan]{__version__}[/cyan]")
     else:
         print()
@@ -75,7 +76,7 @@ def wireviz(
             prepend_file = Path(prepend_file)
             if not prepend_file.exists():
                 raise Exception(f"File does not exist:\n{prepend_file}")
-            if verbose:
+            if not quiet:
                 console.print(f"[dim]Prepend file: {prepend_file}[/dim]")
             else:
                 print("Prepend file:", prepend_file)
@@ -94,7 +95,7 @@ def wireviz(
         _output_dir = f.parent if not output_dir else output_dir
         _output_name = f.stem if not output_name else output_name
 
-        if verbose:
+        if not quiet:
             console.print(f"\n[bold]Processing:[/bold] [green]{f}[/green]")
             with Progress(
                 SpinnerColumn(),
@@ -155,7 +156,7 @@ def wireviz(
                 image_paths=list(image_paths),
             )
 
-    if not verbose:
+    if quiet:
         print()
 
 
