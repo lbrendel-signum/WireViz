@@ -467,6 +467,10 @@ def _get_output_name(input_file: Path, default_output_name: Path) -> str:
 
 
 def main() -> None:
+    """Entry point when module is run directly.
+    
+    Directs users to use the proper command-line interface instead.
+    """
     print("When running from the command line, please use wv_cli.py instead.")
 
 
