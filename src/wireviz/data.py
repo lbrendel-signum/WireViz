@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Union
 
 from wireviz.colors import COLOR_CODES, Color, ColorMode, Colors, ColorScheme
 from wireviz.helper import aspect_ratio, int2tuple
@@ -25,11 +24,11 @@ ImageScale = PlainText  # = Literal['false', 'true', 'width', 'height', 'both']
 Pin = Union[int, PlainText]  # Pin identifier
 PinIndex = int  # Zero-based pin index
 Wire = Union[int, PlainText]  # Wire number or Literal['s'] for shield
-NoneOrMorePins = Union[Pin, Tuple[Pin, ...], None]  # None, one, or a tuple of pin identifiers
+NoneOrMorePins = Union[Pin, tuple[Pin, ...], None]  # None, one, or a tuple of pin identifiers
 NoneOrMorePinIndices = Union[
-    PinIndex, Tuple[PinIndex, ...], None
+    PinIndex, tuple[PinIndex, ...], None,
 ]  # None, one, or a tuple of zero-based pin indices
-OneOrMoreWires = Union[Wire, Tuple[Wire, ...]]  # One or a tuple of wires
+OneOrMoreWires = Union[Wire, tuple[Wire, ...]]  # One or a tuple of wires
 
 # Metadata can contain whatever is needed by the HTML generation/template.
 MetadataKeys = PlainText  # Literal['title', 'description', 'notes', ...]
@@ -40,17 +39,17 @@ Side = Enum("Side", "LEFT RIGHT")
 
 class Metadata(dict):
     """Dictionary subclass for storing harness metadata.
-    
+
     Metadata can contain various keys including 'title', 'description', 'notes', etc.
     All values are used in HTML generation and templating.
     """
-    pass
+
 
 
 @dataclass
 class Options:
     """Configuration options for harness diagram generation.
-    
+
     Attributes:
         fontname: Font name to use in the diagram. Defaults to "arial".
         bgcolor: Background color for the diagram. Defaults to "WH" (white).
@@ -61,13 +60,15 @@ class Options:
         color_mode: Color representation mode. Defaults to "SHORT".
         mini_bom_mode: Whether to use mini BOM mode. Defaults to True.
         template_separator: Separator for template fields. Defaults to ".".
+
     """
+
     fontname: PlainText = "arial"
     bgcolor: Color = "WH"
-    bgcolor_node: Optional[Color] = "WH"
-    bgcolor_connector: Optional[Color] = None
-    bgcolor_cable: Optional[Color] = None
-    bgcolor_bundle: Optional[Color] = None
+    bgcolor_node: Color | None = "WH"
+    bgcolor_connector: Color | None = None
+    bgcolor_cable: Color | None = None
+    bgcolor_bundle: Color | None = None
     color_mode: ColorMode = "SHORT"
     mini_bom_mode: bool = True
     template_separator: str = "."
@@ -86,19 +87,21 @@ class Options:
 @dataclass
 class Tweak:
     """Tweaks for customizing Graphviz diagram output.
-    
+
     Attributes:
         override: Dictionary mapping designators to attribute overrides.
         append: String or list of strings to append to Graphviz output.
+
     """
-    override: Optional[Dict[Designator, Dict[str, Optional[str]]]] = None
-    append: Union[str, List[str], None] = None
+
+    override: dict[Designator, dict[str, str | None]] | None = None
+    append: str | list[str] | None = None
 
 
 @dataclass
 class Image:
     """Image configuration for connectors and cables.
-    
+
     Attributes:
         src: Path to the image file.
         scale: Scaling mode for the image. Can be 'false', 'true', 'width', 'height', or 'both'.
@@ -107,20 +110,22 @@ class Image:
         fixedsize: Whether to use fixed size for the image cell.
         bgcolor: Background color for the image cell.
         caption: Text caption to display below the image.
-    
+
     Note:
         See Graphviz HTML documentation at https://graphviz.org/doc/info/shapes.html#html
+
     """
+
     # Attributes of the image object <img>:
     src: str
-    scale: Optional[ImageScale] = None
+    scale: ImageScale | None = None
     # Attributes of the image cell <td> containing the image:
-    width: Optional[int] = None
-    height: Optional[int] = None
-    fixedsize: Optional[bool] = None
-    bgcolor: Optional[Color] = None
+    width: int | None = None
+    height: int | None = None
+    fixedsize: bool | None = None
+    bgcolor: Color | None = None
     # Contents of the text cell <td> just below the image cell:
-    caption: Optional[MultilineHypertext] = None
+    caption: MultilineHypertext | None = None
     # See also HTML doc at https://graphviz.org/doc/info/shapes.html#html
 
     def __post_init__(self) -> None:
@@ -142,15 +147,14 @@ class Image:
             if self.height:
                 if not self.width:
                     self.width = self.height * aspect_ratio(self.src)
-            else:
-                if self.width:
-                    self.height = self.width / aspect_ratio(self.src)
+            elif self.width:
+                self.height = self.width / aspect_ratio(self.src)
 
 
 @dataclass
 class AdditionalComponent:
     """Additional component to be included in BOM.
-    
+
     Attributes:
         type: Component type description.
         subtype: Component subtype description.
@@ -163,31 +167,32 @@ class AdditionalComponent:
         unit: Unit of measurement for quantity.
         qty_multiplier: Multiplier for quantity based on connector/cable properties.
         bgcolor: Background color for the component in diagrams.
+
     """
+
     type: MultilineHypertext
-    subtype: Optional[MultilineHypertext] = None
-    manufacturer: Optional[MultilineHypertext] = None
-    mpn: Optional[MultilineHypertext] = None
-    supplier: Optional[MultilineHypertext] = None
-    spn: Optional[MultilineHypertext] = None
-    pn: Optional[Hypertext] = None
+    subtype: MultilineHypertext | None = None
+    manufacturer: MultilineHypertext | None = None
+    mpn: MultilineHypertext | None = None
+    supplier: MultilineHypertext | None = None
+    spn: MultilineHypertext | None = None
+    pn: Hypertext | None = None
     qty: float = 1
-    unit: Optional[str] = None
-    qty_multiplier: Union[ConnectorMultiplier, CableMultiplier, None] = None
-    bgcolor: Optional[Color] = None
+    unit: str | None = None
+    qty_multiplier: ConnectorMultiplier | CableMultiplier | None = None
+    bgcolor: Color | None = None
 
     @property
     def description(self) -> str:
         t = self.type.rstrip()
         st = f", {self.subtype.rstrip()}" if self.subtype else ""
-        t = t + st
-        return t
+        return t + st
 
 
 @dataclass
 class Connector:
     """Connector component in a harness.
-    
+
     Attributes:
         name: Unique designator for the connector.
         bgcolor: Background color for the connector node.
@@ -214,32 +219,34 @@ class Connector:
         loops: List of pin pairs that form loops.
         ignore_in_bom: Whether to exclude this connector from the BOM.
         additional_components: List of additional components associated with this connector.
+
     """
+
     name: Designator
-    bgcolor: Optional[Color] = None
-    bgcolor_title: Optional[Color] = None
-    manufacturer: Optional[MultilineHypertext] = None
-    mpn: Optional[MultilineHypertext] = None
-    supplier: Optional[MultilineHypertext] = None
-    spn: Optional[MultilineHypertext] = None
-    pn: Optional[Hypertext] = None
-    style: Optional[str] = None
-    category: Optional[str] = None
-    type: Optional[MultilineHypertext] = None
-    subtype: Optional[MultilineHypertext] = None
-    pincount: Optional[int] = None
-    image: Optional[Image] = None
-    notes: Optional[MultilineHypertext] = None
-    pins: List[Pin] = field(default_factory=list)
-    pinlabels: List[Pin] = field(default_factory=list)
-    pincolors: List[Color] = field(default_factory=list)
-    color: Optional[Color] = None
-    show_name: Optional[bool] = None
-    show_pincount: Optional[bool] = None
+    bgcolor: Color | None = None
+    bgcolor_title: Color | None = None
+    manufacturer: MultilineHypertext | None = None
+    mpn: MultilineHypertext | None = None
+    supplier: MultilineHypertext | None = None
+    spn: MultilineHypertext | None = None
+    pn: Hypertext | None = None
+    style: str | None = None
+    category: str | None = None
+    type: MultilineHypertext | None = None
+    subtype: MultilineHypertext | None = None
+    pincount: int | None = None
+    image: Image | None = None
+    notes: MultilineHypertext | None = None
+    pins: list[Pin] = field(default_factory=list)
+    pinlabels: list[Pin] = field(default_factory=list)
+    pincolors: list[Color] = field(default_factory=list)
+    color: Color | None = None
+    show_name: bool | None = None
+    show_pincount: bool | None = None
     hide_disconnected_pins: bool = False
-    loops: List[List[Pin]] = field(default_factory=list)
+    loops: list[list[Pin]] = field(default_factory=list)
     ignore_in_bom: bool = False
-    additional_components: List[AdditionalComponent] = field(default_factory=list)
+    additional_components: list[AdditionalComponent] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if isinstance(self.image, dict):
@@ -258,7 +265,7 @@ class Connector:
             self.pincount = max(len(self.pins), len(self.pinlabels), len(self.pincolors))
             if not self.pincount:
                 raise Exception(
-                    "You need to specify at least one, pincount, pins, pinlabels, or pincolors"
+                    "You need to specify at least one, pincount, pins, pinlabels, or pincolors",
                 )
 
         # create default list for pins (sequential) if not specified
@@ -298,23 +305,22 @@ class Connector:
         elif side == Side.RIGHT:
             self.ports_right = True
 
-    def get_qty_multiplier(self, qty_multiplier: Optional[ConnectorMultiplier]) -> int:
+    def get_qty_multiplier(self, qty_multiplier: ConnectorMultiplier | None) -> int:
         if not qty_multiplier:
             return 1
-        elif qty_multiplier == "pincount":
+        if qty_multiplier == "pincount":
             return self.pincount
-        elif qty_multiplier == "populated":
+        if qty_multiplier == "populated":
             return sum(self.visible_pins.values())
-        elif qty_multiplier == "unpopulated":
+        if qty_multiplier == "unpopulated":
             return max(0, self.pincount - sum(self.visible_pins.values()))
-        else:
-            raise ValueError(f"invalid qty multiplier parameter for connector {qty_multiplier}")
+        raise ValueError(f"invalid qty multiplier parameter for connector {qty_multiplier}")
 
 
 @dataclass
 class Cable:
     """Cable or wire bundle in a harness.
-    
+
     Attributes:
         name: Unique designator for the cable.
         bgcolor: Background color for the cable node.
@@ -344,35 +350,37 @@ class Cable:
         show_wirenumbers: Whether to show wire numbers in diagrams.
         ignore_in_bom: Whether to exclude this cable from the BOM.
         additional_components: List of additional components associated with this cable.
+
     """
+
     name: Designator
-    bgcolor: Optional[Color] = None
-    bgcolor_title: Optional[Color] = None
-    manufacturer: Union[MultilineHypertext, List[MultilineHypertext], None] = None
-    mpn: Union[MultilineHypertext, List[MultilineHypertext], None] = None
-    supplier: Union[MultilineHypertext, List[MultilineHypertext], None] = None
-    spn: Union[MultilineHypertext, List[MultilineHypertext], None] = None
-    pn: Union[Hypertext, List[Hypertext], None] = None
-    category: Optional[str] = None
-    type: Optional[MultilineHypertext] = None
-    gauge: Optional[float] = None
-    gauge_unit: Optional[str] = None
+    bgcolor: Color | None = None
+    bgcolor_title: Color | None = None
+    manufacturer: MultilineHypertext | list[MultilineHypertext] | None = None
+    mpn: MultilineHypertext | list[MultilineHypertext] | None = None
+    supplier: MultilineHypertext | list[MultilineHypertext] | None = None
+    spn: MultilineHypertext | list[MultilineHypertext] | None = None
+    pn: Hypertext | list[Hypertext] | None = None
+    category: str | None = None
+    type: MultilineHypertext | None = None
+    gauge: float | None = None
+    gauge_unit: str | None = None
     show_equiv: bool = False
     length: float = 0
-    length_unit: Optional[str] = None
-    color: Optional[Color] = None
-    wirecount: Optional[int] = None
-    shield: Union[bool, Color] = False
-    image: Optional[Image] = None
-    notes: Optional[MultilineHypertext] = None
-    colors: List[Colors] = field(default_factory=list)
-    wirelabels: List[Wire] = field(default_factory=list)
-    color_code: Optional[ColorScheme] = None
-    show_name: Optional[bool] = None
+    length_unit: str | None = None
+    color: Color | None = None
+    wirecount: int | None = None
+    shield: bool | Color = False
+    image: Image | None = None
+    notes: MultilineHypertext | None = None
+    colors: list[Colors] = field(default_factory=list)
+    wirelabels: list[Wire] = field(default_factory=list)
+    color_code: ColorScheme | None = None
+    show_name: bool | None = None
     show_wirecount: bool = True
-    show_wirenumbers: Optional[bool] = None
+    show_wirenumbers: bool | None = None
     ignore_in_bom: bool = False
-    additional_components: List[AdditionalComponent] = field(default_factory=list)
+    additional_components: list[AdditionalComponent] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if isinstance(self.image, dict):
@@ -383,14 +391,12 @@ class Cable:
                 g, u = self.gauge.split(" ")
             except Exception:
                 raise Exception(
-                    f"Cable {self.name} gauge={self.gauge} - Gauge must be a number, or number and unit separated by a space"
+                    f"Cable {self.name} gauge={self.gauge} - Gauge must be a number, or number and unit separated by a space",
                 )
             self.gauge = g
 
             if self.gauge_unit is not None:
-                print(
-                    f"Warning: Cable {self.name} gauge_unit={self.gauge_unit} is ignored because its gauge contains {u}"
-                )
+                pass
             if u.upper() == "AWG":
                 self.gauge_unit = u.upper()
             else:
@@ -408,13 +414,11 @@ class Cable:
                 L = float(L)
             except Exception:
                 raise Exception(
-                    f"Cable {self.name} length={self.length} - Length must be a number, or number and unit separated by a space"
+                    f"Cable {self.name} length={self.length} - Length must be a number, or number and unit separated by a space",
                 )
             self.length = L
             if self.length_unit is not None:
-                print(
-                    f"Warning: Cable {self.name} length_unit={self.length_unit} is ignored because its length contains {u}"
-                )
+                pass
             self.length_unit = u
         elif not isinstance(self.length, (int, float)):
             raise Exception(f"Cable {self.name} length has a non-numeric value")
@@ -443,13 +447,12 @@ class Cable:
         else:  # wirecount implicit in length of color list
             if not self.colors:
                 raise Exception(
-                    "Unknown number of wires. Must specify wirecount or colors (implicit length)"
+                    "Unknown number of wires. Must specify wirecount or colors (implicit length)",
                 )
             self.wirecount = len(self.colors)
 
-        if self.wirelabels:
-            if self.shield and "s" in self.wirelabels:
-                raise Exception('"s" may not be used as a wire label for a shielded cable.')
+        if self.wirelabels and self.shield and "s" in self.wirelabels:
+            raise Exception('"s" may not be used as a wire label for a shielded cable.')
 
         # if lists of part numbers are provided check this is a bundle and that it matches the wirecount.
         for idfield in [self.manufacturer, self.mpn, self.supplier, self.spn, self.pn]:
@@ -476,10 +479,10 @@ class Cable:
     # The *_pin arguments accept a tuple, but it seems not in use with the current code.
     def connect(
         self,
-        from_name: Optional[Designator],
+        from_name: Designator | None,
         from_pin: NoneOrMorePinIndices,
         via_wire: OneOrMoreWires,
-        to_name: Optional[Designator],
+        to_name: Designator | None,
         to_pin: NoneOrMorePinIndices,
     ) -> None:
         from_pin = int2tuple(from_pin)
@@ -489,53 +492,56 @@ class Cable:
             raise Exception("from_pin must have the same number of elements as to_pin")
         for i, _ in enumerate(from_pin):
             self.connections.append(
-                Connection(from_name, from_pin[i], via_wire[i], to_name, to_pin[i])
+                Connection(from_name, from_pin[i], via_wire[i], to_name, to_pin[i]),
             )
 
-    def get_qty_multiplier(self, qty_multiplier: Optional[CableMultiplier]) -> float:
+    def get_qty_multiplier(self, qty_multiplier: CableMultiplier | None) -> float:
         if not qty_multiplier:
             return 1
-        elif qty_multiplier == "wirecount":
+        if qty_multiplier == "wirecount":
             return self.wirecount
-        elif qty_multiplier == "terminations":
+        if qty_multiplier == "terminations":
             return len(self.connections)
-        elif qty_multiplier == "length":
+        if qty_multiplier == "length":
             return self.length
-        elif qty_multiplier == "total_length":
+        if qty_multiplier == "total_length":
             return self.length * self.wirecount
-        else:
-            raise ValueError(f"invalid qty multiplier parameter for cable {qty_multiplier}")
+        raise ValueError(f"invalid qty multiplier parameter for cable {qty_multiplier}")
 
 
 @dataclass
 class Connection:
     """Connection between a pin and a wire.
-    
+
     Attributes:
         from_name: Source connector or cable designator.
         from_pin: Source pin identifier.
         via_port: Wire identifier through which the connection passes.
         to_name: Destination connector or cable designator.
         to_pin: Destination pin identifier.
+
     """
-    from_name: Optional[Designator]
-    from_pin: Optional[Pin]
+
+    from_name: Designator | None
+    from_pin: Pin | None
     via_port: Wire
-    to_name: Optional[Designator]
-    to_pin: Optional[Pin]
+    to_name: Designator | None
+    to_pin: Pin | None
 
 
 @dataclass
 class MatePin:
     """Direct pin-to-pin mating connection between connectors.
-    
+
     Attributes:
         from_name: Source connector designator.
         from_pin: Source pin identifier.
         to_name: Destination connector designator.
         to_pin: Destination pin identifier.
         shape: Arrow shape/style for the connection.
+
     """
+
     from_name: Designator
     from_pin: Pin
     to_name: Designator
@@ -546,12 +552,14 @@ class MatePin:
 @dataclass
 class MateComponent:
     """Direct component-to-component mating connection.
-    
+
     Attributes:
         from_name: Source connector designator.
         to_name: Destination connector designator.
         shape: Arrow shape/style for the connection.
+
     """
+
     from_name: Designator
     to_name: Designator
     shape: str

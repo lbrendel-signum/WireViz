@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
 
-from typing import Dict, List
 
 COLOR_CODES = {
-    # fmt: off
     "DIN": [
         "WH",
         "BN",
@@ -66,13 +63,11 @@ COLOR_CODES = {
         "WHRDBK",
         "BNRDBK",
     ],
-    # fmt: on
     "IEC": ["BN", "RD", "OG", "YE", "GN", "BU", "VT", "GY", "WH", "BK"],
     "BW": ["BK", "WH"],
     # 25-pair color code - see also https://en.wikipedia.org/wiki/25-pair_color_code
     # 5 major colors (WH,RD,BK,YE,VT) combined with 5 minor colors (BU,OG,GN,BN,SL).
     # Each POTS pair tip (+) had major/minor color, and ring (-) had minor/major color.
-    # fmt: off
     "TEL": [  # 25x2: Ring and then tip of each pair
         "BUWH",
         "WHBU",
@@ -177,7 +172,6 @@ COLOR_CODES = {
         "VTSL",
         "SLVT",
     ],
-    # fmt: on
     "T568A": ["WHGN", "GN", "WHOG", "BU", "WHBU", "OG", "WHBN", "BN"],
     "T568B": ["WHOG", "OG", "WHGN", "BU", "WHBU", "GN", "WHBN", "BN"],
 }
@@ -269,17 +263,16 @@ ColorMode = str  # = Literal['full', 'FULL', 'hex', 'HEX', 'short', 'SHORT', 'ge
 ColorScheme = str  # Color scheme name = Literal[COLOR_CODES.keys()]
 
 
-def get_color_hex(input: Colors, pad: bool = False) -> List[str]:
+def get_color_hex(input: Colors, pad: bool = False) -> list[str]:
     """Return list of hex colors from either a string of color names or :-separated hex colors."""
     if input is None or input == "":
         return [color_default]
-    elif input[0] == "#":  # Hex color(s)
+    if input[0] == "#":  # Hex color(s)
         output = input.split(":")
         for i, c in enumerate(output):
             if c[0] != "#" or not all(d in _hex_digits for d in c[1:]):
                 if c != input:
                     c += f" in input: {input}"
-                print(f"Invalid hex color: {c}")
                 output[i] = color_default
     else:  # Color name(s)
 
@@ -289,7 +282,6 @@ def get_color_hex(input: Colors, pad: bool = False) -> List[str]:
             except KeyError:
                 if c != input:
                     c += f" in input: {input}"
-                print(f"Unknown color name: {c}")
                 return color_default
 
         output = [lookup(input[i : i + 2]) for i in range(0, len(input), 2)]
@@ -302,7 +294,7 @@ def get_color_hex(input: Colors, pad: bool = False) -> List[str]:
     return output
 
 
-def get_color_translation(translate: Dict[Color, str], input: Colors) -> List[str]:
+def get_color_translation(translate: dict[Color, str], input: Colors) -> list[str]:
     """Return list of colors translations from either a string of color names or :-separated hex colors."""
 
     def from_hex(hex_input: str) -> str:
@@ -320,17 +312,18 @@ def get_color_translation(translate: Dict[Color, str], input: Colors) -> List[st
 
 def translate_color(input: Colors, color_mode: ColorMode) -> str:
     """Translate color codes to the specified color mode format.
-    
+
     Args:
         input: Color code(s) as a string (concatenated two-letter codes or hex).
-        color_mode: Mode to translate to ('full', 'FULL', 'hex', 'HEX', 
+        color_mode: Mode to translate to ('full', 'FULL', 'hex', 'HEX',
                    'short', 'SHORT', 'ger', 'GER'). Case indicates output case.
-    
+
     Returns:
         Translated color string in the specified format.
-        
+
     Raises:
         Exception: If color_mode is invalid.
+
     """
     if input == "" or input is None:
         return ""
@@ -351,5 +344,4 @@ def translate_color(input: Colors, color_mode: ColorMode) -> str:
         raise Exception("Unknown color mode")
     if upper:
         return output.upper()
-    else:
-        return output.lower()
+    return output.lower()

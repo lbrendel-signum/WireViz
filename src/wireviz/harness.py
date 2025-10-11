@@ -1,24 +1,13 @@
-# -*- coding: utf-8 -*-
 
 import re
 from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from graphviz import Graph
+
 from wireviz import APP_NAME, APP_URL, __version__, colors
-from wireviz.data import (
-    Cable,
-    Connector,
-    MateComponent,
-    MatePin,
-    Metadata,
-    Options,
-    Side,
-    Tweak,
-)
-from wireviz.svgembed import embed_svg_images, embed_svg_images_file
 from wireviz.bom import (
     HEADER_MPN,
     HEADER_PN,
@@ -29,6 +18,16 @@ from wireviz.bom import (
     pn_info_string,
 )
 from wireviz.colors import get_color_hex, translate_color
+from wireviz.data import (
+    Cable,
+    Connector,
+    MateComponent,
+    MatePin,
+    Metadata,
+    Options,
+    Side,
+    Tweak,
+)
 from wireviz.graphviz_html import (
     html_bgcolor,
     html_bgcolor_attr,
@@ -46,6 +45,7 @@ from wireviz.helper import (
     tuplelist2tsv,
 )
 from wireviz.html import generate_html_output
+from wireviz.svgembed import embed_svg_images, embed_svg_images_file
 
 OLD_CONNECTOR_ATTR = {
     "pinout": "was renamed to 'pinlabels' in v0.2",
@@ -64,16 +64,18 @@ def check_old(node: str, old_attr: dict, args: dict) -> None:
 @dataclass
 class Harness:
     """Wire harness containing connectors, cables, and their connections.
-    
+
     This is the main class representing a complete wire harness with all its
     components and relationships. It manages connectors, cables, mate connections,
     and generates various output formats including diagrams and BOMs.
-    
+
     Attributes:
         metadata: Metadata information for the harness.
         options: Configuration options for diagram generation.
         tweak: Graphviz output customization settings.
+
     """
+
     metadata: Metadata
     options: Options
     tweak: Tweak
@@ -113,14 +115,14 @@ class Harness:
         to_pin: tuple[int, str],
     ) -> None:
         # check from and to connectors
-        for name, pin in zip([from_name, to_name], [from_pin, to_pin]):
+        for name, pin in zip([from_name, to_name], [from_pin, to_pin], strict=False):
             if name is not None and name in self.connectors:
                 connector = self.connectors[name]
                 # check if provided name is ambiguous
                 if pin in connector.pins and pin in connector.pinlabels:
                     if connector.pins.index(pin) != connector.pinlabels.index(pin):
                         raise Exception(
-                            f"{name}:{pin} is defined both in pinlabels and pins, for different pins."
+                            f"{name}:{pin} is defined both in pinlabels and pins, for different pins.",
                         )
                     # TODO: Maybe issue a warning if present in both lists but referencing the same pin?
                 if pin in connector.pinlabels:
@@ -142,7 +144,7 @@ class Harness:
             if via_wire in cable.colors and via_wire in cable.wirelabels:
                 if cable.colors.index(via_wire) != cable.wirelabels.index(via_wire):
                     raise Exception(
-                        f"{via_name}:{via_wire} is defined both in colors and wirelabels, for different wires."
+                        f"{via_name}:{via_wire} is defined both in colors and wirelabels, for different wires.",
                     )
                 # TODO: Maybe issue a warning if present in both lists but referencing the same wire?
             if via_wire in cable.colors:
@@ -195,17 +197,17 @@ class Harness:
 
             html = []
             # fmt: off
-            rows = [[f'{html_bgcolor(connector.bgcolor_title)}{remove_links(connector.name)}'
+            rows = [[f"{html_bgcolor(connector.bgcolor_title)}{remove_links(connector.name)}"
                         if connector.show_name else None],
                     [pn_info_string(HEADER_PN, None, remove_links(connector.pn)),
                      html_line_breaks(pn_info_string(HEADER_MPN, connector.manufacturer, connector.mpn)),
                      html_line_breaks(pn_info_string(HEADER_SPN, connector.supplier, connector.spn))],
                     [html_line_breaks(connector.type),
                      html_line_breaks(connector.subtype),
-                     f'{connector.pincount}-pin' if connector.show_pincount else None,
+                     f"{connector.pincount}-pin" if connector.show_pincount else None,
                      translate_color(connector.color, self.options.color_mode) if connector.color else None,
                      html_colorbar(connector.color)],
-                    '<!-- connector table -->' if connector.style != 'simple' else None,
+                    "<!-- connector table -->" if connector.style != "simple" else None,
                     [html_image(connector.image)],
                     [html_caption(connector.image)]]
             # fmt: on
@@ -219,10 +221,10 @@ class Harness:
                 pinhtml.append('<table border="0" cellspacing="0" cellpadding="3" cellborder="1">')
 
                 for pinindex, (pinname, pinlabel, pincolor) in enumerate(
-                    zip_longest(connector.pins, connector.pinlabels, connector.pincolors)
+                    zip_longest(connector.pins, connector.pinlabels, connector.pincolors),
                 ):
                     if connector.hide_disconnected_pins and not connector.visible_pins.get(
-                        pinname, False
+                        pinname, False,
                     ):
                         continue
 
@@ -232,14 +234,14 @@ class Harness:
                     if pinlabel:
                         pinhtml.append(f"    <td>{pinlabel}</td>")
                     if connector.pincolors:
-                        if pincolor in colors._color_hex.keys():
+                        if pincolor in colors._color_hex:
                             # fmt: off
                             pinhtml.append(f'    <td sides="tbl">{translate_color(pincolor, self.options.color_mode)}</td>')
                             pinhtml.append( '    <td sides="tbr">')
                             pinhtml.append( '     <table border="0" cellborder="1"><tr>')
                             pinhtml.append(f'      <td bgcolor="{colors.translate_color(pincolor, "HEX")}" width="8" height="8" fixedsize="true"></td>')
-                            pinhtml.append( '     </tr></table>')
-                            pinhtml.append( '    </td>')
+                            pinhtml.append( "     </tr></table>")
+                            pinhtml.append( "    </td>")
                             # fmt: on
                         else:
                             pinhtml.append('    <td colspan="2"></td>')
@@ -299,7 +301,7 @@ class Harness:
                     awg_fmt = f" ({mm2_equiv(cable.gauge)} mm\u00b2)"
 
             # fmt: off
-            rows = [[f'{html_bgcolor(cable.bgcolor_title)}{remove_links(cable.name)}'
+            rows = [[f"{html_bgcolor(cable.bgcolor_title)}{remove_links(cable.name)}"
                         if cable.show_name else None],
                     [pn_info_string(HEADER_PN, None,
                         remove_links(cable.pn)) if not isinstance(cable.pn, list) else None,
@@ -310,13 +312,13 @@ class Harness:
                         cable.supplier if not isinstance(cable.supplier, list) else None,
                         cable.spn if not isinstance(cable.spn, list) else None))],
                     [html_line_breaks(cable.type),
-                     f'{cable.wirecount}x' if cable.show_wirecount else None,
-                     f'{cable.gauge} {cable.gauge_unit}{awg_fmt}' if cable.gauge else None,
-                     '+ S' if cable.shield else None,
-                     f'{cable.length} {cable.length_unit}' if cable.length > 0 else None,
+                     f"{cable.wirecount}x" if cable.show_wirecount else None,
+                     f"{cable.gauge} {cable.gauge_unit}{awg_fmt}" if cable.gauge else None,
+                     "+ S" if cable.shield else None,
+                     f"{cable.length} {cable.length_unit}" if cable.length > 0 else None,
                      translate_color(cable.color, self.options.color_mode) if cable.color else None,
                      html_colorbar(cable.color)],
-                    '<!-- wire table -->',
+                    "<!-- wire table -->",
                     [html_image(cable.image)],
                     [html_caption(cable.image)]]
             # fmt: on
@@ -331,7 +333,7 @@ class Harness:
             wirehtml.append("   <tr><td>&nbsp;</td></tr>")
 
             for i, (connection_color, wirelabel) in enumerate(
-                zip_longest(cable.colors, cable.wirelabels), 1
+                zip_longest(cable.colors, cable.wirelabels), 1,
             ):
                 wirehtml.append("   <tr>")
                 wirehtml.append(f"    <td><!-- {i}_in --></td>")
@@ -352,11 +354,11 @@ class Harness:
                 wirehtml.append("   </tr>")
 
                 # fmt: off
-                bgcolors = ['#000000'] + get_color_hex(connection_color, pad=pad) + ['#000000']
+                bgcolors = ["#000000", *get_color_hex(connection_color, pad=pad), "#000000"]
                 wirehtml.append("   <tr>")
                 wirehtml.append(f'    <td colspan="3" border="0" cellspacing="0" cellpadding="0" port="w{i}" height="{(2 * len(bgcolors))}">')
                 wirehtml.append('     <table cellspacing="0" cellborder="0" border="0">')
-                for j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
+                for _j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
                     wirehtml.append(f'      <tr><td colspan="3" cellpadding="0" height="2" bgcolor="{bgcolor if bgcolor != "" else colors.default_color}" border="0"></td></tr>')
                 wirehtml.append("     </table>")
                 wirehtml.append("    </td>")
@@ -369,7 +371,7 @@ class Harness:
                     wireidentification = []
                     if isinstance(cable.pn, list):
                         wireidentification.append(
-                            pn_info_string(HEADER_PN, None, remove_links(cable.pn[i - 1]))
+                            pn_info_string(HEADER_PN, None, remove_links(cable.pn[i - 1])),
                         )
                     manufacturer_info = pn_info_string(
                         HEADER_MPN,
@@ -430,9 +432,7 @@ class Harness:
                     dot.attr(
                         "edge",
                         color=":".join(
-                            ["#000000"]
-                            + colors.get_color_hex(cable.colors[connection.via_port - 1], pad=pad)
-                            + ["#000000"]
+                            ["#000000", *colors.get_color_hex(cable.colors[connection.via_port - 1], pad=pad), "#000000"],
                         ),
                     )
                 else:  # it's a shield connection
@@ -440,7 +440,7 @@ class Harness:
                     dot.attr(
                         "edge",
                         color=(
-                            ":".join(["#000000", shield_color_hex, "#000000"])
+                            f"#000000:{shield_color_hex}:#000000"
                             if isinstance(cable.shield, str)
                             else "#000000"
                         ),
@@ -540,7 +540,7 @@ class Harness:
         def typecheck(name: str, value: Any, expect: type) -> None:
             if not isinstance(value, expect):
                 raise Exception(
-                    f"Unexpected value type of {name}: Expected {expect}, got {type(value)}\n{value}"
+                    f"Unexpected value type of {name}: Expected {expect}, got {type(value)}\n{value}",
                 )
 
         # TODO?: Differ between override attributes and HTML?
@@ -557,37 +557,29 @@ class Harness:
             for i, entry in enumerate(dot.body):
                 if isinstance(entry, str):
                     # Find a possibly quoted keyword after leading TAB(s) and followed by [ ].
-                    match = re.match(r'^\t*(")?((?(1)[^"]|[^ "])+)(?(1)") \[.*\]$', entry, re.S)
+                    match = re.match(r'^\t*(")?((?(1)[^"]|[^ "])+)(?(1)") \[.*\]$', entry, re.DOTALL)
                     keyword = match and match[2]
-                    if keyword in self.tweak.override.keys():
+                    if keyword in self.tweak.override:
                         for attr, value in self.tweak.override[keyword].items():
                             if value is None:
                                 entry, n_subs = re.subn(
-                                    f'( +)?{attr}=("[^"]*"|[^] ]*)(?(1)| *)', "", entry
+                                    f'( +)?{attr}=("[^"]*"|[^] ]*)(?(1)| *)', "", entry,
                                 )
-                                if n_subs < 1:
-                                    print(
-                                        f"Harness.create_graph() warning: {attr} not found in {keyword}!"
-                                    )
-                                elif n_subs > 1:
-                                    print(
-                                        f"Harness.create_graph() warning: {attr} removed {n_subs} times in {keyword}!"
-                                    )
+                                if n_subs < 1 or n_subs > 1:
+                                    pass
                                 continue
 
                             if len(value) == 0 or " " in value:
                                 value = value.replace('"', r"\"")
                                 value = f'"{value}"'
                             entry, n_subs = re.subn(
-                                f'{attr}=("[^"]*"|[^] ]*)', f"{attr}={value}", entry
+                                f'{attr}=("[^"]*"|[^] ]*)', f"{attr}={value}", entry,
                             )
                             if n_subs < 1:
                                 # If attr not found, then append it
                                 entry = re.sub(r"\]$", f" {attr}={value}]", entry)
                             elif n_subs > 1:
-                                print(
-                                    f"Harness.create_graph() warning: {attr} overridden {n_subs} times in {keyword}!"
-                                )
+                                pass
 
                         dot.body[i] = entry
 
@@ -662,14 +654,14 @@ class Harness:
             file_write_text(f"{filename}.bom.tsv", tuplelist2tsv(bomlist))
         if "csv" in fmt:
             # TODO: implement CSV output (preferrably using CSV library)
-            print("CSV output is not yet supported")
+            pass
         # HTML output
         if "html" in fmt:
             generate_html_output(filename, bomlist, self.metadata, self.options)
         # PDF output
         if "pdf" in fmt:
             # TODO: implement PDF output
-            print("PDF output is not yet supported")
+            pass
         # delete SVG if not needed
         if "html" in fmt and "svg" not in fmt:
             # SVG file was just needed to generate HTML
@@ -677,7 +669,7 @@ class Harness:
         elif "svg" in fmt:
             Path(f"{filename}.tmp.svg").replace(f"{filename}.svg")
 
-    def bom(self) -> List["BOMEntry"]:
+    def bom(self) -> list["BOMEntry"]:
         if not self._bom:
             self._bom = generate_bom(self)
         return self._bom

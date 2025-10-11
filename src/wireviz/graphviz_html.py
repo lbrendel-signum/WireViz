@@ -1,28 +1,28 @@
-# -*- coding: utf-8 -*-
 
-from typing import Any, List, Optional, Union
+from typing import Any
 
-from wireviz.data import Color, Image
 from wireviz.colors import translate_color
+from wireviz.data import Color, Image
 from wireviz.helper import remove_links
 
 
 def nested_html_table(
-    rows: List[Union[str, List[Optional[str]], None]], table_attrs: str = ""
-) -> List[str]:
+    rows: list[str | list[str | None] | None], table_attrs: str = "",
+) -> list[str]:
     """Create nested HTML table structure for Graphviz.
-    
+
     Creates a parent table with child tables for list items, allowing independent
     cell widths between rows.
-    
+
     Args:
         rows: List of rows, where each row can be a string (scalar) or a list of
               strings (nested table row). Attributes in leading <tdX> tags are
               injected into the preceding <td> tag.
         table_attrs: Optional attributes for the parent table tag.
-    
+
     Returns:
         List of HTML strings forming the table structure.
+
     """
     # input: list, each item may be scalar or list
     # output: a parent table with one child table per parent item that is list, and one cell per parent item that is scalar
@@ -33,7 +33,7 @@ def nested_html_table(
 
     num_rows = 0
     for row in rows:
-        if isinstance(row, List):
+        if isinstance(row, list):
             if len(row) > 0 and any(row):
                 html.append(" <tr><td>")
                 # fmt: off
@@ -75,14 +75,15 @@ def html_colorbar(color: Color) -> str:
     return html_bgcolor(color, ' width="4"') if color else None
 
 
-def html_image(image: Optional[Image]) -> Optional[str]:
+def html_image(image: Image | None) -> str | None:
     """Generate HTML for an image in Graphviz format.
-    
+
     Args:
         image: Image configuration object.
-        
+
     Returns:
         HTML string with <tdX> tag and image, or None if no image provided.
+
     """
     if not image:
         return None
@@ -101,14 +102,15 @@ def html_image(image: Optional[Image]) -> Optional[str]:
     )
 
 
-def html_caption(image: Optional[Image]) -> Optional[str]:
+def html_caption(image: Image | None) -> str | None:
     """Generate HTML for an image caption in Graphviz format.
-    
+
     Args:
         image: Image configuration object containing caption text.
-        
+
     Returns:
         HTML string with caption <tdX> tag, or None if no caption.
+
     """
     return (
         f'<tdX sides="BLR"{html_bgcolor_attr(image.bgcolor)}>{html_line_breaks(image.caption)}'
@@ -117,14 +119,15 @@ def html_caption(image: Optional[Image]) -> Optional[str]:
     )
 
 
-def html_size_attr(image: Optional[Image]) -> str:
+def html_size_attr(image: Image | None) -> str:
     """Generate Graphviz HTML attributes for image size.
-    
+
     Args:
         image: Image configuration object with width, height, and fixedsize.
-        
+
     Returns:
         String with width, height, and fixedsize attributes, or empty string.
+
     """
     # Return Graphviz HTML attributes to specify minimum or fixed size of a TABLE or TD object
     return (
@@ -140,12 +143,13 @@ def html_size_attr(image: Optional[Image]) -> str:
 
 def html_line_breaks(inp: Any) -> Any:
     """Convert newlines to HTML line breaks and remove links.
-    
+
     Args:
         inp: Input value, typically a string.
-        
+
     Returns:
         String with newlines replaced by <br /> tags and links removed,
         or unchanged if not a string.
+
     """
     return remove_links(inp).replace("\n", "<br />") if isinstance(inp, str) else inp

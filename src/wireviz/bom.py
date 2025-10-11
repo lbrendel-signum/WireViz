@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 
+import functools
+import operator
 from dataclasses import asdict
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 from wireviz.colors import translate_color
 from wireviz.data import AdditionalComponent, Cable, Color, Connector
@@ -14,26 +15,26 @@ if TYPE_CHECKING:
 
 BOM_COLUMNS_ALWAYS = ("id", "description", "qty", "unit", "designators")
 BOM_COLUMNS_OPTIONAL = ("pn", "manufacturer", "mpn", "supplier", "spn")
-BOM_COLUMNS_IN_KEY = ("description", "unit") + BOM_COLUMNS_OPTIONAL
+BOM_COLUMNS_IN_KEY = ("description", "unit", *BOM_COLUMNS_OPTIONAL)
 
 HEADER_PN = "P/N"
 HEADER_MPN = "MPN"
 HEADER_SPN = "SPN"
 
-BOMKey = Tuple[str, ...]
+BOMKey = tuple[str, ...]
 BOMColumn = str  # = Literal[*BOM_COLUMNS_ALWAYS, *BOM_COLUMNS_OPTIONAL]
-BOMEntry = Dict[BOMColumn, Union[str, int, float, List[str], None]]
+BOMEntry = dict[BOMColumn, str | int | float | list[str] | None]
 
 
-def optional_fields(part: Union[Connector, Cable, AdditionalComponent]) -> BOMEntry:
+def optional_fields(part: Connector | Cable | AdditionalComponent) -> BOMEntry:
     """Return part field values for the optional BOM columns as a dict."""
     part = asdict(part)
     return {field: part.get(field) for field in BOM_COLUMNS_OPTIONAL}
 
 
 def get_additional_component_table(
-    harness: "Harness", component: Union[Connector, Cable]
-) -> List[str]:
+    harness: "Harness", component: Connector | Cable,
+) -> list[str]:
     """Return a list of diagram node table row strings with additional components."""
     rows = []
     if component.additional_components:
@@ -57,12 +58,12 @@ def get_additional_component_table(
                 rows.append(component_table_entry(f"#{id} ({part.type.rstrip()})", **common_args))
             else:
                 rows.append(
-                    component_table_entry(part.description, **common_args, **optional_fields(part))
+                    component_table_entry(part.description, **common_args, **optional_fields(part)),
                 )
     return rows
 
 
-def get_additional_component_bom(component: Union[Connector, Cable]) -> List[BOMEntry]:
+def get_additional_component_bom(component: Connector | Cable) -> list[BOMEntry]:
     """Return a list of BOM entries with additional components."""
     bom_entries = []
     # Ignore components that have qty 0
@@ -78,7 +79,7 @@ def get_additional_component_bom(component: Union[Connector, Cable]) -> List[BOM
                 "unit": part.unit,
                 "designators": component.name if component.show_name else None,
                 **optional_fields(part),
-            }
+            },
         )
     return bom_entries
 
@@ -90,9 +91,8 @@ def bom_entry_key(entry: BOMEntry) -> BOMKey:
     return entry["key"]
 
 
-def generate_bom(harness: "Harness") -> List[BOMEntry]:
+def generate_bom(harness: "Harness") -> list[BOMEntry]:
     """Return a list of BOM entries generated from the harness."""
-
     bom_entries = []
     # connectors
     for connector in harness.connectors.values():
@@ -113,7 +113,7 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
                     "description": description,
                     "designators": connector.name if connector.show_name else None,
                     **optional_fields(connector),
-                }
+                },
             )
 
         # add connectors aditional components to bom
@@ -144,7 +144,7 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
                         "unit": cable.length_unit,
                         "designators": cable.name if cable.show_name else None,
                         **optional_fields(cable),
-                    }
+                    },
                 )
             else:
                 # add each wire from the bundle to the bom
@@ -169,7 +169,7 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
                                 k: index_if_list(v, index)
                                 for k, v in optional_fields(cable).items()
                             },
-                        }
+                        },
                     )
 
         # add cable/bundles aditional components to bom
@@ -185,21 +185,21 @@ def generate_bom(harness: "Harness") -> List[BOMEntry]:
     bom = []
     for _, group in groupby(sorted(bom_entries, key=bom_entry_key), key=bom_entry_key):
         group_entries = list(group)
-        designators = sum((make_list(entry.get("designators")) for entry in group_entries), [])
+        designators = functools.reduce(operator.iadd, (make_list(entry.get("designators")) for entry in group_entries), [])
         total_qty = sum(entry.get("qty", 1) for entry in group_entries)
         bom.append(
             {
                 **group_entries[0],
                 "qty": int(total_qty) if float(total_qty).is_integer() else round(total_qty, 3),
                 "designators": sorted(set(designators)),
-            }
+            },
         )
 
     # add an incrementing id to each bom entry
     return [{**entry, "id": index} for index, entry in enumerate(bom, 1)]
 
 
-def get_bom_index(bom: List[BOMEntry], target: BOMKey) -> int:
+def get_bom_index(bom: list[BOMEntry], target: BOMKey) -> int:
     """Return id of BOM entry or raise exception if not found."""
     for entry in bom:
         if bom_entry_key(entry) == target:
@@ -207,7 +207,7 @@ def get_bom_index(bom: List[BOMEntry], target: BOMKey) -> int:
     raise Exception("Internal error: No BOM entry found matching: " + "|".join(target))
 
 
-def bom_list(bom: List[BOMEntry]) -> List[List[str]]:
+def bom_list(bom: list[BOMEntry]) -> list[list[str]]:
     """Return list of BOM rows as lists of column strings with headings in top row."""
     keys = list(BOM_COLUMNS_ALWAYS)  # Always include this fixed set of BOM columns.
     for fieldname in BOM_COLUMNS_OPTIONAL:
@@ -222,7 +222,7 @@ def bom_list(bom: List[BOMEntry]) -> List[List[str]]:
         "spn": HEADER_SPN,
     }
     return [
-        [bom_headings.get(k, k.capitalize()) for k in keys]
+        [bom_headings.get(k, k.capitalize()) for k in keys],
     ] + [  # Create header row with key names
         [make_str(entry.get(k)) for k in keys] for entry in bom
     ]  # Create string list for each entry row
@@ -230,14 +230,14 @@ def bom_list(bom: List[BOMEntry]) -> List[List[str]]:
 
 def component_table_entry(
     type: str,
-    qty: Union[int, float],
-    unit: Optional[str] = None,
-    bgcolor: Optional[Color] = None,
-    pn: Optional[str] = None,
-    manufacturer: Optional[str] = None,
-    mpn: Optional[str] = None,
-    supplier: Optional[str] = None,
-    spn: Optional[str] = None,
+    qty: float,
+    unit: str | None = None,
+    bgcolor: Color | None = None,
+    pn: str | None = None,
+    manufacturer: str | None = None,
+    mpn: str | None = None,
+    supplier: str | None = None,
+    spn: str | None = None,
 ) -> str:
     """Return a diagram node table row string with an additional component."""
     part_number_list = [
@@ -259,13 +259,12 @@ def component_table_entry(
   </tr></table>"""
 
 
-def pn_info_string(header: str, name: Optional[str], number: Optional[str]) -> Optional[str]:
+def pn_info_string(header: str, name: str | None, number: str | None) -> str | None:
     """Return the company name and/or the part number in one single string or None otherwise."""
     number = str(number).strip() if number is not None else ""
     if name or number:
         return f"{name if name else header}{': ' + number if number else ''}"
-    else:
-        return None
+    return None
 
 
 def index_if_list(value: Any, index: int) -> Any:
@@ -273,7 +272,7 @@ def index_if_list(value: Any, index: int) -> Any:
     return value[index] if isinstance(value, list) else value
 
 
-def make_list(value: Any) -> List[Any]:
+def make_list(value: Any) -> list[Any]:
     """Return value if a list, empty list if None, or single element list otherwise."""
     return value if isinstance(value, list) else [] if value is None else [value]
 

@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
 
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Union
 
 from wireviz import APP_NAME, APP_URL, __version__, colors
 from wireviz.data import Metadata, Options
-from wireviz.svgembed import data_URI_base64
 from wireviz.graphviz_html import html_line_breaks
 from wireviz.helper import (
     file_read_text,
@@ -14,24 +12,26 @@ from wireviz.helper import (
     flatten2d,
     smart_file_resolve,
 )
+from wireviz.svgembed import data_URI_base64
 
 
 def generate_html_output(
-    filename: Union[str, Path],
-    bom_list: List[List[str]],
+    filename: str | Path,
+    bom_list: list[list[str]],
     metadata: Metadata,
     options: Options,
 ) -> None:
     """Generate HTML output file from template with diagram and BOM.
-    
+
     Creates an HTML file by loading a template, embedding the SVG diagram,
     generating a BOM table, and replacing placeholders with actual values.
-    
+
     Args:
         filename: Base filename (without extension) for output files.
         bom_list: Bill of materials as a list of rows.
         metadata: Metadata information including template settings.
         options: Configuration options for output generation.
+
     """
     # load HTML template
     templatename = metadata.get("template", {}).get("name")
@@ -111,9 +111,9 @@ def generate_html_output(
         for item, contents in metadata.items():
             if isinstance(contents, (str, int, float)):
                 replacements[f"<!-- %{item}% -->"] = html_line_breaks(str(contents))
-            elif isinstance(contents, Dict):  # useful for authors, revisions
+            elif isinstance(contents, dict):  # useful for authors, revisions
                 for index, (category, entry) in enumerate(contents.items()):
-                    if isinstance(entry, Dict):
+                    if isinstance(entry, dict):
                         replacements[f"<!-- %{item}_{index + 1}% -->"] = str(category)
                         for entry_key, entry_value in entry.items():
                             replacements[f"<!-- %{item}_{index + 1}_{entry_key}% -->"] = (

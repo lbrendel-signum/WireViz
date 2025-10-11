@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-import platform
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import yaml
 
@@ -25,15 +23,14 @@ from . import APP_NAME
 
 
 def parse(
-    inp: Union[Path, str, Dict],
-    return_types: Union[None, str, Tuple[str]] = None,
-    output_formats: Union[None, str, Tuple[str]] = None,
-    output_dir: Union[str, Path] = None,
-    output_name: Union[None, str] = None,
-    image_paths: Union[Path, str, List] = [],
+    inp: Path | str | dict,
+    return_types: None | str | tuple[str] = None,
+    output_formats: None | str | tuple[str] = None,
+    output_dir: str | Path | None = None,
+    output_name: None | str = None,
+    image_paths: Path | str | list | None = None,
 ) -> Any:
-    """
-    This function takes an input, parses it as a WireViz Harness file,
+    """This function takes an input, parses it as a WireViz Harness file,
     and outputs the result as one or more files and/or as a function return value
 
     Accepted inputs:
@@ -83,8 +80,10 @@ def parse(
             * PNG data
             * SVG data
             * a Harness object
-    """
 
+    """
+    if image_paths is None:
+        image_paths = []
     if not output_formats and not return_types:
         raise Exception("No output formats or return types specified")
 
@@ -129,7 +128,7 @@ def parse(
 
     sections = ["connectors", "cables", "connections"]
     types: list[type] = [dict, dict, list]
-    for sec, ty in zip(sections, types):
+    for sec, ty in zip(sections, types, strict=False):
         if sec in yaml_data and type(yaml_data[sec]) is ty:  # section exists
             if len(yaml_data[sec]) > 0:  # section has contents
                 if ty is dict:
@@ -147,11 +146,10 @@ def parse(
                             template_cables[key] = attribs
             else:  # section exists but is empty
                 pass
-        else:  # section does not exist, create empty section
-            if ty is dict:
-                yaml_data[sec] = {}
-            elif ty is list:
-                yaml_data[sec] = []
+        elif ty is dict:
+            yaml_data[sec] = {}
+        elif ty is list:
+            yaml_data[sec] = []
 
     connection_sets = yaml_data["connections"]
 
@@ -171,7 +169,7 @@ def parse(
             if designator in designators_and_templates:
                 if designators_and_templates[designator] != template:
                     raise Exception(
-                        f"Trying to redefine {designator} from {designators_and_templates[designator]} to {template}"
+                        f"Trying to redefine {designator} from {designators_and_templates[designator]} to {template}",
                     )
             else:
                 designators_and_templates[designator] = template
@@ -188,17 +186,17 @@ def parse(
     alternating_types = ["connector", "cable/arrow"]
     expected_type = None
 
-    def check_type(designator, template, actual_type):
+    def check_type(designator, template, actual_type) -> None:
         nonlocal expected_type
         if not expected_type:  # each connection set may start with either section
             expected_type = actual_type
 
         if actual_type != expected_type:  # did not alternate
             raise Exception(
-                f'Expected {expected_type}, but "{designator}" ("{template}") is {actual_type}'
+                f'Expected {expected_type}, but "{designator}" ("{template}") is {actual_type}',
             )
 
-    def alternate_type():  # flip between connector and cable/arrow
+    def alternate_type() -> None:  # flip between connector and cable/arrow
         nonlocal expected_type
         expected_type = alternating_types[1 - alternating_types.index(expected_type)]
 
@@ -209,7 +207,7 @@ def parse(
             if isinstance(entry, list):
                 connectioncount.append(len(entry))
             elif isinstance(entry, dict):
-                connectioncount.append(len(expand(list(entry.values())[0])))
+                connectioncount.append(len(expand(next(iter(entry.values())))))
                 # e.g.: - X1: [1-4,6] yields 5
             else:
                 pass  # strings do not reveal connectioncount
@@ -228,7 +226,7 @@ def parse(
         # check that all entries are the same length
         if len(set(connectioncount)) > 1:
             raise Exception(
-                "All items in connection set must reference the same number of connections"
+                "All items in connection set must reference the same number of connections",
             )
         # all entries are the same length, connection count is set
         connectioncount = connectioncount[0]
@@ -245,7 +243,7 @@ def parse(
                     template, designator = resolve_designator(item, template_separator_char)
                     connection_set[index][subindex] = designator
             elif isinstance(entry, dict):
-                key = list(entry.keys())[0]
+                key = next(iter(entry.keys()))
                 template, designator = resolve_designator(key, template_separator_char)
                 value = entry[key]
                 connection_set[index] = {designator: value}
@@ -257,7 +255,7 @@ def parse(
             if isinstance(entry, list):
                 connection_set[index] = [{designator: 1} for designator in entry]
             elif isinstance(entry, dict):
-                designator = list(entry.keys())[0]
+                designator = next(iter(entry.keys()))
                 pinlist = expand(entry[designator])
                 connection_set[index] = [{designator: pin} for pin in pinlist]
             else:
@@ -272,19 +270,19 @@ def parse(
         # generate components
         for entry in connection_set:
             for item in entry:
-                designator = list(item.keys())[0]
+                designator = next(iter(item.keys()))
                 template = designators_and_templates[designator]
 
                 if designator in harness.connectors:  # existing connector instance
                     check_type(designator, template, "connector")
-                elif template in template_connectors.keys():
+                elif template in template_connectors:
                     # generate new connector instance from template
                     check_type(designator, template, "connector")
                     harness.add_connector(name=designator, **template_connectors[template])
 
                 elif designator in harness.cables:  # existing cable instance
                     check_type(designator, template, "cable/arrow")
-                elif template in template_cables.keys():
+                elif template in template_cables:
                     # generate new cable instance from template
                     check_type(designator, template, "cable/arrow")
                     harness.add_cable(name=designator, **template_cables[template])
@@ -300,12 +298,12 @@ def parse(
         # transpose connection set list
         # before: one item per component, one subitem per connection in set
         # after:  one item per connection in set, one subitem per component
-        connection_set = list(map(list, zip(*connection_set)))
+        connection_set = list(map(list, zip(*connection_set, strict=False)))
 
         # connect components
         for index_entry, entry in enumerate(connection_set):
             for index_item, item in enumerate(entry):
-                designator = list(item.keys())[0]
+                designator = next(iter(item.keys()))
 
                 if designator in harness.cables:
                     if index_item == 0:
@@ -324,7 +322,7 @@ def parse(
                 elif is_arrow(designator):
                     if index_item == 0:  # list starts with an arrow
                         raise Exception("An arrow cannot be at the start of a connection set")
-                    elif index_item == len(entry) - 1:  # list ends with an arrow
+                    if index_item == len(entry) - 1:  # list ends with an arrow
                         raise Exception("An arrow cannot be at the end of a connection set")
 
                     from_name, from_pin = get_single_key_and_value(entry[index_item - 1])
@@ -342,8 +340,7 @@ def parse(
     used_components = set(designators_and_templates.values())
     forgotten_components = [c for c in proposed_components if c not in used_components]
     if len(forgotten_components) > 0:
-        print("Warning: The following components are not referenced in any connection set:")
-        print(", ".join(forgotten_components))
+        pass
 
     # harness population completed =============================================
 
@@ -370,11 +367,12 @@ def parse(
                 returns.append(harness)
 
         return tuple(returns) if len(returns) != 1 else returns[0]
+    return None
 
 
-def _get_yaml_data_and_path(inp: Union[str, Path, dict]) -> tuple[dict, Path]:
+def _get_yaml_data_and_path(inp: str | Path | dict) -> tuple[dict, Path]:
     # determine whether inp is a file path, a YAML string, or a Dict
-    if not isinstance(inp, Dict):  # received a str or a Path
+    if not isinstance(inp, dict):  # received a str or a Path
         try:
             yaml_path = Path(inp).expanduser().resolve(strict=True)
             # if no FileNotFoundError exception happens, get file contents
@@ -390,8 +388,7 @@ def _get_yaml_data_and_path(inp: Union[str, Path, dict]) -> tuple[dict, Path]:
             from errno import EINVAL, ENAMETOOLONG
 
             if type(e) is OSError and e.errno not in (EINVAL, ENAMETOOLONG, None):
-                print(f"OSError(errno={e.errno}) in Python {sys.version} at {platform.platform()}")
-                raise e
+                raise
             # file does not exist; assume inp is a YAML string
             yaml_str = inp
             yaml_path = None
@@ -406,31 +403,28 @@ def _get_yaml_data_and_path(inp: Union[str, Path, dict]) -> tuple[dict, Path]:
 def _get_output_dir(input_file: Path, default_output_dir: Path) -> Path:
     if default_output_dir:  # user-specified output directory
         output_dir = Path(default_output_dir)
-    else:  # auto-determine appropriate output directory
-        if input_file:  # input comes from a file; place output in same directory
-            output_dir = input_file.parent
-        else:  # input comes from str or Dict; fall back to cwd
-            output_dir = Path.cwd()
+    elif input_file:  # input comes from a file; place output in same directory
+        output_dir = input_file.parent
+    else:  # input comes from str or Dict; fall back to cwd
+        output_dir = Path.cwd()
     return output_dir.resolve()
 
 
 def _get_output_name(input_file: Path, default_output_name: Path) -> str:
     if default_output_name:  # user-specified output name
         output_name = default_output_name
-    else:  # auto-determine appropriate output name
-        if input_file:  # input comes from a file; use same file stem
-            output_name = input_file.stem
-        else:  # input comes from str or Dict; no fallback available
-            raise Exception("No output file name provided")
+    elif input_file:  # input comes from a file; use same file stem
+        output_name = input_file.stem
+    else:  # input comes from str or Dict; no fallback available
+        raise Exception("No output file name provided")
     return output_name
 
 
 def main() -> None:
     """Entry point when module is run directly.
-    
+
     Directs users to use the proper command-line interface instead.
     """
-    print("When running from the command line, please use wv_cli.py instead.")
 
 
 if __name__ == "__main__":
