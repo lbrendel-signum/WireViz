@@ -1,13 +1,23 @@
-# -*- coding: utf-8 -*-
-
 import re
 from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from graphviz import Graph
+
 from wireviz import APP_NAME, APP_URL, __version__, colors
+from wireviz.bom import (
+    HEADER_MPN,
+    HEADER_PN,
+    HEADER_SPN,
+    BOMEntry,
+    bom_list,
+    generate_bom,
+    get_additional_component_table,
+    pn_info_string,
+)
+from wireviz.colors import get_color_hex, translate_color
 from wireviz.data import (
     Cable,
     Connector,
@@ -18,17 +28,6 @@ from wireviz.data import (
     Side,
     Tweak,
 )
-from wireviz.svgembed import embed_svg_images, embed_svg_images_file
-from wireviz.bom import (
-    HEADER_MPN,
-    HEADER_PN,
-    HEADER_SPN,
-    bom_list,
-    generate_bom,
-    get_additional_component_table,
-    pn_info_string,
-)
-from wireviz.colors import get_color_hex, translate_color
 from wireviz.graphviz_html import (
     html_bgcolor,
     html_bgcolor_attr,
@@ -46,6 +45,7 @@ from wireviz.helper import (
     tuplelist2tsv,
 )
 from wireviz.html import generate_html_output
+from wireviz.svgembed import embed_svg_images, embed_svg_images_file
 
 OLD_CONNECTOR_ATTR = {
     "pinout": "was renamed to 'pinlabels' in v0.2",
@@ -64,16 +64,17 @@ def check_old(node: str, old_attr: dict, args: dict) -> None:
 @dataclass
 class Harness:
     """Wire harness containing connectors, cables, and their connections.
-    
+
     This is the main class representing a complete wire harness with all its
     components and relationships. It manages connectors, cables, mate connections,
     and generates various output formats including diagrams and BOMs.
-    
+
     Attributes:
         metadata: Metadata information for the harness.
         options: Configuration options for diagram generation.
         tweak: Graphviz output customization settings.
     """
+
     metadata: Metadata
     options: Options
     tweak: Tweak
@@ -113,7 +114,7 @@ class Harness:
         to_pin: tuple[int, str],
     ) -> None:
         # check from and to connectors
-        for name, pin in zip([from_name, to_name], [from_pin, to_pin]):
+        for name, pin in zip([from_name, to_name], [from_pin, to_pin], strict=False):
             if name is not None and name in self.connectors:
                 connector = self.connectors[name]
                 # check if provided name is ambiguous
@@ -356,7 +357,7 @@ class Harness:
                 wirehtml.append("   <tr>")
                 wirehtml.append(f'    <td colspan="3" border="0" cellspacing="0" cellpadding="0" port="w{i}" height="{(2 * len(bgcolors))}">')
                 wirehtml.append('     <table cellspacing="0" cellborder="0" border="0">')
-                for j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
+                for _j, bgcolor in enumerate(bgcolors[::-1]):  # Reverse to match the curved wires when more than 2 colors
                     wirehtml.append(f'      <tr><td colspan="3" cellpadding="0" height="2" bgcolor="{bgcolor if bgcolor != "" else colors.default_color}" border="0"></td></tr>')
                 wirehtml.append("     </table>")
                 wirehtml.append("    </td>")
@@ -677,7 +678,7 @@ class Harness:
         elif "svg" in fmt:
             Path(f"{filename}.tmp.svg").replace(f"{filename}.svg")
 
-    def bom(self) -> List["BOMEntry"]:
+    def bom(self) -> list[BOMEntry]:
         if not self._bom:
             self._bom = generate_bom(self)
         return self._bom

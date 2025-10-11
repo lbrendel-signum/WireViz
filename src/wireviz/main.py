@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -34,12 +31,11 @@ format_codes = {
 
 def wireviz(
     file: list[str],
-    output_name: Optional[str] = None,
-    format: Optional[str] = "hpst",
-    prepend: Optional[list[str]] = None,
-    output_dir: Optional[Path] = ".\\",
-    version: Optional[bool] = False,
-    verbose: Optional[bool] = False,
+    output_name: str | None = None,
+    format: str | None = "hpst",
+    prepend: list[str] | None = None,
+    output_dir: Path | None = ".\\",
+    version: bool | None = False,
 ) -> None:
     """
     Parses the provided FILE and generates the specified outputs.

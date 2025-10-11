@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import platform
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import yaml
 
@@ -25,12 +24,12 @@ from . import APP_NAME
 
 
 def parse(
-    inp: Union[Path, str, Dict],
-    return_types: Union[None, str, Tuple[str]] = None,
-    output_formats: Union[None, str, Tuple[str]] = None,
-    output_dir: Union[str, Path] = None,
-    output_name: Union[None, str] = None,
-    image_paths: Union[Path, str, List] = [],
+    inp: Path | str | dict,
+    return_types: None | str | tuple[str] = None,
+    output_formats: None | str | tuple[str] = None,
+    output_dir: str | Path = None,
+    output_name: None | str = None,
+    image_paths: Path | str | list = None,
 ) -> Any:
     """
     This function takes an input, parses it as a WireViz Harness file,
@@ -85,6 +84,8 @@ def parse(
             * a Harness object
     """
 
+    if image_paths is None:
+        image_paths = []
     if not output_formats and not return_types:
         raise Exception("No output formats or return types specified")
 
@@ -129,7 +130,7 @@ def parse(
 
     sections = ["connectors", "cables", "connections"]
     types: list[type] = [dict, dict, list]
-    for sec, ty in zip(sections, types):
+    for sec, ty in zip(sections, types, strict=False):
         if sec in yaml_data and type(yaml_data[sec]) is ty:  # section exists
             if len(yaml_data[sec]) > 0:  # section has contents
                 if ty is dict:
@@ -300,7 +301,7 @@ def parse(
         # transpose connection set list
         # before: one item per component, one subitem per connection in set
         # after:  one item per connection in set, one subitem per component
-        connection_set = list(map(list, zip(*connection_set)))
+        connection_set = list(map(list, zip(*connection_set, strict=False)))
 
         # connect components
         for index_entry, entry in enumerate(connection_set):
@@ -372,9 +373,9 @@ def parse(
         return tuple(returns) if len(returns) != 1 else returns[0]
 
 
-def _get_yaml_data_and_path(inp: Union[str, Path, dict]) -> tuple[dict, Path]:
+def _get_yaml_data_and_path(inp: str | Path | dict) -> tuple[dict, Path]:
     # determine whether inp is a file path, a YAML string, or a Dict
-    if not isinstance(inp, Dict):  # received a str or a Path
+    if not isinstance(inp, dict):  # received a str or a Path
         try:
             yaml_path = Path(inp).expanduser().resolve(strict=True)
             # if no FileNotFoundError exception happens, get file contents
@@ -427,7 +428,7 @@ def _get_output_name(input_file: Path, default_output_name: Path) -> str:
 
 def main() -> None:
     """Entry point when module is run directly.
-    
+
     Directs users to use the proper command-line interface instead.
     """
     print("When running from the command line, please use wv_cli.py instead.")
