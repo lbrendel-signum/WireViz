@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
-
 import base64
 import re
 from pathlib import Path
-from typing import Union
 
 mime_subtype_replacements = {"jpg": "jpeg", "tif": "tiff"}
 
 
 # TODO: Share cache and code between data_URI_base64() and embed_svg_images()
-def data_URI_base64(file: Union[str, Path], media: str = "image") -> str:
+def data_URI_base64(file: str | Path, media: str = "image") -> str:
     """Return Base64-encoded data URI of input file."""
     file = Path(file)
     b64 = base64.b64encode(file.read_bytes()).decode("utf-8")
@@ -20,18 +17,20 @@ def data_URI_base64(file: Union[str, Path], media: str = "image") -> str:
     return uri
 
 
-def embed_svg_images(svg_in: str, base_path: Union[str, Path] = Path.cwd()) -> str:
+def embed_svg_images(svg_in: str, base_path: str | Path | None = None) -> str:
     """Embed external images in SVG as Base64 data URIs.
-    
+
     Replaces external image references in SVG with embedded Base64-encoded data URIs.
-    
+
     Args:
         svg_in: SVG content as a string.
         base_path: Base path for resolving relative image paths. Defaults to current directory.
-        
+
     Returns:
         SVG content with images embedded as data URIs.
     """
+    if base_path is None:
+        base_path = Path.cwd()
     images_b64 = {}  # cache of base64-encoded images
 
     def image_tag(pre: str, url: str, post: str) -> str:
@@ -56,12 +55,12 @@ def embed_svg_images(svg_in: str, base_path: Union[str, Path] = Path.cwd()) -> s
     return pattern.sub(replace, svg_in)
 
 
-def get_mime_subtype(filename: Union[str, Path]) -> str:
+def get_mime_subtype(filename: str | Path) -> str:
     """Get MIME subtype from filename extension.
-    
+
     Args:
         filename: Path to file with extension.
-        
+
     Returns:
         MIME subtype (e.g., 'jpeg' for .jpg files).
     """
@@ -71,9 +70,9 @@ def get_mime_subtype(filename: Union[str, Path]) -> str:
     return mime_subtype
 
 
-def embed_svg_images_file(filename_in: Union[str, Path], overwrite: bool = True) -> None:
+def embed_svg_images_file(filename_in: str | Path, overwrite: bool = True) -> None:
     """Embed images in an SVG file and optionally overwrite the original.
-    
+
     Args:
         filename_in: Path to input SVG file.
         overwrite: If True, replaces the original file. If False, creates a .b64.svg file.

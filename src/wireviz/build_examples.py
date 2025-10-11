@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from wireviz import APP_NAME, __version__, wireviz
-from wireviz.helper import open_file_append, open_file_read, open_file_write
-import typer
 import os
 import sys
 from pathlib import Path
-from typing import List
+
+import typer
+
+from wireviz import APP_NAME, __version__, wireviz
+from wireviz.helper import open_file_append, open_file_read, open_file_write
 
 script_path = Path(__file__).absolute()
 
@@ -43,14 +43,14 @@ generated_extensions = (
 )
 
 
-def collect_filenames(description: str, groupkey: str, ext_list: List[str]) -> List[Path]:
+def collect_filenames(description: str, groupkey: str, ext_list: list[str]) -> list[Path]:
     """Collect filenames matching extensions for a specific group.
-    
+
     Args:
         description: Description of the action (e.g., "Building", "Cleaning").
         groupkey: Key identifying the file group to process.
         ext_list: List of file extensions to match.
-        
+
     Returns:
         Sorted list of matching file paths.
     """
@@ -62,9 +62,9 @@ def collect_filenames(description: str, groupkey: str, ext_list: List[str]) -> L
     return sorted([filename for pattern in patterns for filename in path.glob(pattern)])
 
 
-def build_generated(groupkeys: List[str]) -> None:
+def build_generated(groupkeys: list[str]) -> None:
     """Build generated files (diagrams, BOMs, etc.) from YAML input files.
-    
+
     Args:
         groupkeys: List of group keys to process.
     """
@@ -108,9 +108,9 @@ def build_generated(groupkeys: List[str]) -> None:
                     )
 
 
-def clean_generated(groupkeys: List[str]) -> None:
+def clean_generated(groupkeys: list[str]) -> None:
     """Remove all generated files for specified groups.
-    
+
     Args:
         groupkeys: List of group keys to clean.
     """
@@ -122,9 +122,11 @@ def clean_generated(groupkeys: List[str]) -> None:
                 Path(filename).unlink()
 
 
-def compare_generated(groupkeys: List[str], branch: str = "", include_graphviz_output: bool = False) -> None:
+def compare_generated(
+    groupkeys: list[str], branch: str = "", include_graphviz_output: bool = False
+) -> None:
     """Compare generated files with those in a git branch.
-    
+
     Args:
         groupkeys: List of group keys to compare.
         branch: Git branch or commit to compare against. Empty string for staged changes.
@@ -145,9 +147,9 @@ def compare_generated(groupkeys: List[str], branch: str = "", include_graphviz_o
             os.system(cmd)
 
 
-def restore_generated(groupkeys: List[str], branch: str = "") -> None:
+def restore_generated(groupkeys: list[str], branch: str = "") -> None:
     """Restore generated files from a git branch.
-    
+
     Args:
         groupkeys: List of group keys to restore.
         branch: Git branch or commit to restore from. Empty string for HEAD.
@@ -172,7 +174,7 @@ def restore_generated(groupkeys: List[str], branch: str = "") -> None:
 
 def version_callback(value: bool):
     """Typer callback to display version and exit.
-    
+
     Args:
         value: If True, displays version and exits.
     """
@@ -198,7 +200,7 @@ def main(
         "--branch",
         help="branch or commit to compare with or restore from",
     ),
-    group_list: List[str] = typer.Option(
+    group_list: list[str] = typer.Option(
         list(groups.keys()),
         "-g",
         "--groups",
@@ -214,20 +216,20 @@ def main(
     ),
 ) -> None:
     """WireViz Example Manager"""
-    
+
     # Validate action choice
     valid_actions = ["build", "clean", "compare", "diff", "restore"]
     if action not in valid_actions:
         typer.echo(f"Error: Invalid action '{action}'. Must be one of: {', '.join(valid_actions)}")
         raise typer.Exit(code=1)
-    
+
     # Validate groups
     valid_groups = list(groups.keys())
     for group in group_list:
         if group not in valid_groups:
             typer.echo(f"Error: Invalid group '{group}'. Must be one of: {', '.join(valid_groups)}")
             raise typer.Exit(code=1)
-    
+
     if action == "build":
         build_generated(group_list)
     elif action == "clean":

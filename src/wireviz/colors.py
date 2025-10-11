@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from typing import Dict, List
-
 COLOR_CODES = {
     # fmt: off
     "DIN": [
@@ -269,7 +265,7 @@ ColorMode = str  # = Literal['full', 'FULL', 'hex', 'HEX', 'short', 'SHORT', 'ge
 ColorScheme = str  # Color scheme name = Literal[COLOR_CODES.keys()]
 
 
-def get_color_hex(input: Colors, pad: bool = False) -> List[str]:
+def get_color_hex(input: Colors, pad: bool = False) -> list[str]:
     """Return list of hex colors from either a string of color names or :-separated hex colors."""
     if input is None or input == "":
         return [color_default]
@@ -302,7 +298,7 @@ def get_color_hex(input: Colors, pad: bool = False) -> List[str]:
     return output
 
 
-def get_color_translation(translate: Dict[Color, str], input: Colors) -> List[str]:
+def get_color_translation(translate: dict[Color, str], input: Colors) -> list[str]:
     """Return list of colors translations from either a string of color names or :-separated hex colors."""
 
     def from_hex(hex_input: str) -> str:
@@ -320,15 +316,15 @@ def get_color_translation(translate: Dict[Color, str], input: Colors) -> List[st
 
 def translate_color(input: Colors, color_mode: ColorMode) -> str:
     """Translate color codes to the specified color mode format.
-    
+
     Args:
         input: Color code(s) as a string (concatenated two-letter codes or hex).
-        color_mode: Mode to translate to ('full', 'FULL', 'hex', 'HEX', 
+        color_mode: Mode to translate to ('full', 'FULL', 'hex', 'HEX',
                    'short', 'SHORT', 'ger', 'GER'). Case indicates output case.
-    
+
     Returns:
         Translated color string in the specified format.
-        
+
     Raises:
         Exception: If color_mode is invalid.
     """
