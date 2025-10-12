@@ -25,13 +25,34 @@ from . import APP_NAME
 
 
 def _add_context_to_error(e: Exception, context: str) -> Exception:
-    """Add contextual information to an exception message."""
+    """Add contextual information to an exception message.
+
+    Creates a new exception of the same type with enhanced error message that includes
+    contextual information about where the error occurred (e.g., which connector, cable,
+    or section).
+
+    Args:
+        e: The original exception that was raised.
+        context: Contextual information to prepend to the error message, such as
+            "Error in connector 'X1'" or "Error in 'options' section".
+
+    Returns:
+        A new exception of the same type as the original, with an enhanced error message
+        that includes the context. The original exception is preserved as the cause.
+
+    Example:
+        >>> try:
+        ...     raise ValueError("invalid value")
+        ... except ValueError as e:
+        ...     raise _add_context_to_error(e, "Error in connector 'X1'")
+        ValueError: Error in connector 'X1': invalid value
+    """
     error_msg = str(e)
     if error_msg:
         new_msg = f"{context}: {error_msg}"
     else:
         new_msg = context
-    
+
     # Create a new exception of the same type with enhanced message
     new_exception = type(e)(new_msg)
     # Preserve the original traceback
