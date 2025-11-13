@@ -19,7 +19,7 @@ class SupplierConfig:
 
     Credentials are loaded from environment variables:
     - DIGIKEY_CLIENT_ID, DIGIKEY_CLIENT_SECRET for Digikey
-    - MOUSER_API_KEY for Mouser
+    - MOUSER_PART_API_KEY for Mouser
     """
 
     digikey_client_id: str | None = None
@@ -32,7 +32,7 @@ class SupplierConfig:
         return cls(
             digikey_client_id=os.environ.get("DIGIKEY_CLIENT_ID"),
             digikey_client_secret=os.environ.get("DIGIKEY_CLIENT_SECRET"),
-            mouser_api_key=os.environ.get("MOUSER_API_KEY"),
+            mouser_api_key=os.environ.get("MOUSER_PART_API_KEY"),
         )
 
     def has_digikey_credentials(self) -> bool:
@@ -110,8 +110,10 @@ class DigikeyClient(SupplierClient):
             try:
                 # Import digikey-api library if credentials are available
                 import digikey
+                from digikey.v4.productinformation import KeywordSearchRequest
 
                 self._client = digikey
+                self._KeywordSearchRequest = KeywordSearchRequest
                 self._api_available = True
             except ImportError:
                 # Library not installed, will be unavailable
@@ -138,16 +140,25 @@ class DigikeyClient(SupplierClient):
             os.environ["DIGIKEY_CLIENT_ID"] = self.client_id
             os.environ["DIGIKEY_CLIENT_SECRET"] = self.client_secret
 
-            # Search for the part
+            # Search for the part by product details
             part = self._client.product_details(spn)
 
             if part:
+                manufacturer = None
+                if hasattr(part, "manufacturer") and part.manufacturer:
+                    if isinstance(part.manufacturer, dict):
+                        manufacturer = part.manufacturer.get("value")
+                    elif hasattr(part.manufacturer, "value"):
+                        manufacturer = part.manufacturer.value
+                    else:
+                        manufacturer = str(part.manufacturer)
+
                 return PartInfo(
-                    manufacturer=getattr(part, "manufacturer", {}).get("value") if hasattr(part, "manufacturer") else None,
-                    mpn=getattr(part, "manufacturer_part_number", None) if hasattr(part, "manufacturer_part_number") else None,
-                    description=getattr(part, "product_description", None) if hasattr(part, "product_description") else None,
-                    image_url=getattr(part, "primary_photo", None) if hasattr(part, "primary_photo") else None,
-                    datasheet_url=getattr(part, "primary_datasheet", None) if hasattr(part, "primary_datasheet") else None,
+                    manufacturer=manufacturer,
+                    mpn=getattr(part, "manufacturer_part_number", None),
+                    description=getattr(part, "product_description", None),
+                    image_url=getattr(part, "primary_photo", None),
+                    datasheet_url=getattr(part, "primary_datasheet", None),
                     supplier="Digikey",
                     spn=spn,
                 )
@@ -168,10 +179,10 @@ class MouserClient(SupplierClient):
 
         if self.is_available():
             try:
-                # Import mouser-api library if credentials are available
-                import mouser
+                # Import mouser library if credentials are available
+                from mouser.api import MouserPartSearchRequest
 
-                self._client = mouser
+                self._MouserPartSearchRequest = MouserPartSearchRequest
                 self._api_available = True
             except ImportError:
                 # Library not installed, will be unavailable
@@ -190,27 +201,30 @@ class MouserClient(SupplierClient):
         Returns:
             PartInfo object with fetched data, or None if not found or unavailable
         """
-        if not self._api_available or not self._client:
+        if not self._api_available or not self._MouserPartSearchRequest:
             return None
 
         try:
             # Configure API key
-            os.environ["MOUSER_API_KEY"] = self.api_key
+            os.environ["MOUSER_PART_API_KEY"] = self.api_key
 
             # Search for the part
-            part = self._client.part_search(spn)
+            search = self._MouserPartSearchRequest(operation="partnumber")
+            success = search.part_search(spn)
 
-            if part and hasattr(part, "parts") and part.parts:
-                first_part = part.parts[0]
-                return PartInfo(
-                    manufacturer=getattr(first_part, "manufacturer", None) if hasattr(first_part, "manufacturer") else None,
-                    mpn=getattr(first_part, "manufacturer_part_number", None) if hasattr(first_part, "manufacturer_part_number") else None,
-                    description=getattr(first_part, "description", None) if hasattr(first_part, "description") else None,
-                    image_url=getattr(first_part, "image_url", None) if hasattr(first_part, "image_url") else None,
-                    datasheet_url=getattr(first_part, "datasheet_url", None) if hasattr(first_part, "datasheet_url") else None,
-                    supplier="Mouser",
-                    spn=spn,
-                )
+            if success:
+                cleaned_response = search.get_clean_response()
+                if cleaned_response and len(cleaned_response) > 0:
+                    part = cleaned_response[0]
+                    return PartInfo(
+                        manufacturer=part.get("Manufacturer"),
+                        mpn=part.get("ManufacturerPartNumber"),
+                        description=part.get("Description"),
+                        image_url=part.get("ImagePath"),
+                        datasheet_url=part.get("DataSheetUrl"),
+                        supplier="Mouser",
+                        spn=spn,
+                    )
         except Exception as e:
             # Silently fail - API might be unavailable or part not found
             print(f"Warning: Could not fetch Mouser part {spn}: {e}")

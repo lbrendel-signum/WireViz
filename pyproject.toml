@@ -10,7 +10,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "typer>=0.15.2",
     "digikey-api @ git+https://github.com/lbrendel-signum/digikey-api.git",
-    "mouser-api @ git+https://github.com/lbrendel-signum/mouser-api.git",
+    "mouser @ git+https://github.com/lbrendel-signum/mouser-api.git",
     "requests>=2.31.0",
 ]
 
