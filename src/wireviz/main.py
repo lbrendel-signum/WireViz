@@ -115,7 +115,7 @@ def wireviz(
     output_name: str | None = None,
     format: str | None = "hpst",
     prepend: list[str] | None = None,
-    output_dir: Path | None = ".\\",
+    output_dir: Path | None = None,
     version: bool | None = False,
     quiet: bool | None = False,
     save: bool | None = False,
