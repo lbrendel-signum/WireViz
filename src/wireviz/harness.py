@@ -88,10 +88,28 @@ class Harness:
 
     def add_connector(self, name: str, *args, **kwargs) -> None:
         check_old(f"Connector '{name}'", OLD_CONNECTOR_ATTR, kwargs)
-        self.connectors[name] = Connector(name, *args, **kwargs)
+        try:
+            self.connectors[name] = Connector(name, *args, **kwargs)
+        except Exception as e:
+            # Add context about which connector failed
+            error_msg = str(e)
+            if error_msg:
+                new_msg = f"Error in connector '{name}': {error_msg}"
+            else:
+                new_msg = f"Error in connector '{name}'"
+            raise type(e)(new_msg) from e
 
     def add_cable(self, name: str, *args, **kwargs) -> None:
-        self.cables[name] = Cable(name, *args, **kwargs)
+        try:
+            self.cables[name] = Cable(name, *args, **kwargs)
+        except Exception as e:
+            # Add context about which cable failed
+            error_msg = str(e)
+            if error_msg:
+                new_msg = f"Error in cable '{name}': {error_msg}"
+            else:
+                new_msg = f"Error in cable '{name}'"
+            raise type(e)(new_msg) from e
 
     def add_mate_pin(self, from_name, from_pin, to_name, to_pin, arrow_type) -> None:
         self.mates.append(MatePin(from_name, from_pin, to_name, to_pin, arrow_type))
