@@ -15,10 +15,12 @@ WireViz is a tool for easily documenting cables, wiring harnesses and connector 
 ## Code Style Guidelines
 
 - Follow **PEP 8** Python style guidelines
-- Use **isort** for import sorting
-- Use **black** for code formatting (line length: 100 characters)
+- Use **Ruff** for linting and code formatting (line length: 100 characters)
+  - Run `ruff format .` to format code
+  - Run `ruff check .` to check for linting issues
+  - Run `ruff check --fix .` to auto-fix issues
 - Use Google Style for documentation strings ([examples](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html))
-- UTF-8 encoding for all input and output files
+- UTF-8 encoding for all input and output files (Python 3+ handles this by default)
 
 ## Project Structure
 
