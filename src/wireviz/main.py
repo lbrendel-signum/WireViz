@@ -159,6 +159,8 @@ def wireviz(
     if quiet:
         print()
 
+def main():
+    typer.run(wireviz)
 
 if __name__ == "__main__":
-    typer.run(wireviz)
+    main()
