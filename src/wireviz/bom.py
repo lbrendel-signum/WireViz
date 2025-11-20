@@ -46,18 +46,22 @@ def evaluate_additional_component_qty(
 
     # Add component properties to context
     if isinstance(component, Connector):
-        context.update({
-            "pincount": component.pincount,
-            "populated": sum(component.visible_pins.values()),
-            "unpopulated": max(0, component.pincount - sum(component.visible_pins.values())),
-        })
+        context.update(
+            {
+                "pincount": component.pincount,
+                "populated": sum(component.visible_pins.values()),
+                "unpopulated": max(0, component.pincount - sum(component.visible_pins.values())),
+            }
+        )
     elif isinstance(component, Cable):
-        context.update({
-            "wirecount": component.wirecount,
-            "length": component.length,
-            "terminations": len(component.connections),
-            "total_length": component.length * component.wirecount,
-        })
+        context.update(
+            {
+                "wirecount": component.wirecount,
+                "length": component.length,
+                "terminations": len(component.connections),
+                "total_length": component.length * component.wirecount,
+            }
+        )
 
     # Evaluate qty expression
     try:
@@ -131,9 +135,7 @@ def bom_entry_key(entry: BOMEntry) -> BOMKey:
     return entry["key"]
 
 
-def evaluate_additional_bom_item_qty(
-    item: BOMEntry, harness: "Harness"
-) -> float:
+def evaluate_additional_bom_item_qty(item: BOMEntry, harness: "Harness") -> float:
     """Evaluate the qty field of an additional BOM item, supporting expressions.
 
     Args:
@@ -200,23 +202,23 @@ def evaluate_additional_bom_item_qty(
             total_terminations += len(cable.connections)
             total_total_length += cable.length * cable.wirecount
 
-    context.update({
-        "pincount": total_pincount,
-        "populated": total_populated,
-        "unpopulated": total_unpopulated,
-        "wirecount": total_wirecount,
-        "length": total_length,
-        "terminations": total_terminations,
-        "total_length": total_total_length,
-    })
+    context.update(
+        {
+            "pincount": total_pincount,
+            "populated": total_populated,
+            "unpopulated": total_unpopulated,
+            "wirecount": total_wirecount,
+            "length": total_length,
+            "terminations": total_terminations,
+            "total_length": total_total_length,
+        }
+    )
 
     # Evaluate the expression
     try:
         return evaluate_expression(qty, context)
     except ValueError as e:
-        raise ValueError(
-            f"Error evaluating qty expression in additional_bom_items: {e}"
-        ) from e
+        raise ValueError(f"Error evaluating qty expression in additional_bom_items: {e}") from e
 
 
 def generate_bom(harness: "Harness") -> list[BOMEntry]:
