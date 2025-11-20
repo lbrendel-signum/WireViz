@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from wireviz.colors import translate_color
 from wireviz.data import AdditionalComponent, Cable, Color, Connector
 from wireviz.graphviz_html import html_bgcolor_attr, html_line_breaks
-from wireviz.helper import clean_whitespace
+from wireviz.helper import clean_whitespace, evaluate_expression
 
 if TYPE_CHECKING:
     from wireviz.harness import Harness
@@ -29,6 +29,49 @@ def optional_fields(part: Connector | Cable | AdditionalComponent) -> BOMEntry:
     return {field: part.get(field) for field in BOM_COLUMNS_OPTIONAL}
 
 
+def evaluate_additional_component_qty(
+    part: AdditionalComponent, component: Connector | Cable
+) -> float:
+    """Evaluate the qty field of an additional component, supporting expressions.
+
+    Args:
+        part: Additional component with qty and qty_multiplier fields.
+        component: Parent connector or cable.
+
+    Returns:
+        Evaluated quantity as a float.
+    """
+    # Build context for expression evaluation
+    context = {}
+
+    # Add component properties to context
+    if isinstance(component, Connector):
+        context.update({
+            "pincount": component.pincount,
+            "populated": sum(component.visible_pins.values()),
+            "unpopulated": max(0, component.pincount - sum(component.visible_pins.values())),
+        })
+    elif isinstance(component, Cable):
+        context.update({
+            "wirecount": component.wirecount,
+            "length": component.length,
+            "terminations": len(component.connections),
+            "total_length": component.length * component.wirecount,
+        })
+
+    # Evaluate qty expression
+    try:
+        evaluated_qty = evaluate_expression(part.qty, context)
+    except ValueError as e:
+        raise ValueError(
+            f"Error evaluating qty expression in additional_components for {component.name}: {e}"
+        ) from e
+
+    # Apply qty_multiplier if specified
+    multiplier = component.get_qty_multiplier(part.qty_multiplier)
+    return evaluated_qty * multiplier
+
+
 def get_additional_component_table(harness: "Harness", component: Connector | Cable) -> list[str]:
     """Return a list of diagram node table row strings with additional components."""
     rows = []
@@ -40,8 +83,9 @@ def get_additional_component_table(harness: "Harness", component: Connector | Ca
             for part in component.additional_components
             if component.get_qty_multiplier(part.qty_multiplier)
         ]:
+            evaluated_qty = evaluate_additional_component_qty(part, component)
             common_args = {
-                "qty": part.qty * component.get_qty_multiplier(part.qty_multiplier),
+                "qty": evaluated_qty,
                 "unit": part.unit,
                 "bgcolor": part.bgcolor,
             }
@@ -67,10 +111,11 @@ def get_additional_component_bom(component: Connector | Cable) -> list[BOMEntry]
         for part in component.additional_components
         if component.get_qty_multiplier(part.qty_multiplier)
     ]:
+        evaluated_qty = evaluate_additional_component_qty(part, component)
         bom_entries.append(
             {
                 "description": part.description,
-                "qty": part.qty * component.get_qty_multiplier(part.qty_multiplier),
+                "qty": evaluated_qty,
                 "unit": part.unit,
                 "designators": component.name if component.show_name else None,
                 **optional_fields(part),
@@ -84,6 +129,94 @@ def bom_entry_key(entry: BOMEntry) -> BOMKey:
     if "key" not in entry:
         entry["key"] = tuple(clean_whitespace(make_str(entry.get(c))) for c in BOM_COLUMNS_IN_KEY)
     return entry["key"]
+
+
+def evaluate_additional_bom_item_qty(
+    item: BOMEntry, harness: "Harness"
+) -> float:
+    """Evaluate the qty field of an additional BOM item, supporting expressions.
+
+    Args:
+        item: BOM entry dictionary with a qty field.
+        harness: Harness object containing all connectors and cables.
+
+    Returns:
+        Evaluated quantity as a float.
+    """
+    qty = item.get("qty", 1)
+
+    # If qty is already a number, return it
+    if isinstance(qty, (int, float)):
+        return float(qty)
+
+    # Build context for expression evaluation
+    context = {}
+
+    # Get designators if specified
+    designators = item.get("designators", [])
+    if not isinstance(designators, list):
+        designators = [designators] if designators else []
+
+    # Add individual connector/cable properties to context
+    # This allows expressions like "X1.pincount + X2.pincount"
+    for name in designators:
+        if name in harness.connectors:
+            conn = harness.connectors[name]
+            # Create a namespace for this connector
+            context[name] = {
+                "pincount": conn.pincount,
+                "populated": sum(conn.visible_pins.values()),
+                "unpopulated": max(0, conn.pincount - sum(conn.visible_pins.values())),
+            }
+        elif name in harness.cables:
+            cable = harness.cables[name]
+            context[name] = {
+                "wirecount": cable.wirecount,
+                "length": cable.length,
+                "terminations": len(cable.connections),
+                "total_length": cable.length * cable.wirecount,
+            }
+
+    # Also add aggregate values across all designators
+    # This allows expressions like "pincount * 2" to sum across all designators
+    total_pincount = 0
+    total_populated = 0
+    total_unpopulated = 0
+    total_wirecount = 0
+    total_length = 0
+    total_terminations = 0
+    total_total_length = 0
+
+    for name in designators:
+        if name in harness.connectors:
+            conn = harness.connectors[name]
+            total_pincount += conn.pincount
+            total_populated += sum(conn.visible_pins.values())
+            total_unpopulated += max(0, conn.pincount - sum(conn.visible_pins.values()))
+        elif name in harness.cables:
+            cable = harness.cables[name]
+            total_wirecount += cable.wirecount
+            total_length += cable.length
+            total_terminations += len(cable.connections)
+            total_total_length += cable.length * cable.wirecount
+
+    context.update({
+        "pincount": total_pincount,
+        "populated": total_populated,
+        "unpopulated": total_unpopulated,
+        "wirecount": total_wirecount,
+        "length": total_length,
+        "terminations": total_terminations,
+        "total_length": total_total_length,
+    })
+
+    # Evaluate the expression
+    try:
+        return evaluate_expression(qty, context)
+    except ValueError as e:
+        raise ValueError(
+            f"Error evaluating qty expression in additional_bom_items: {e}"
+        ) from e
 
 
 def generate_bom(harness: "Harness") -> list[BOMEntry]:
@@ -171,8 +304,11 @@ def generate_bom(harness: "Harness") -> list[BOMEntry]:
         # add cable/bundles aditional components to bom
         bom_entries.extend(get_additional_component_bom(cable))
 
-    # add harness aditional components to bom directly, as they both are List[BOMEntry]
-    bom_entries.extend(harness.additional_bom_items)
+    # add harness aditional components to bom, evaluating qty expressions
+    for item in harness.additional_bom_items:
+        evaluated_item = item.copy()
+        evaluated_item["qty"] = evaluate_additional_bom_item_qty(item, harness)
+        bom_entries.append(evaluated_item)
 
     # remove line breaks if present and cleanup any resulting whitespace issues
     bom_entries = [{k: clean_whitespace(v) for k, v in entry.items()} for entry in bom_entries]
