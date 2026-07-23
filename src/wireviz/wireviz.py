@@ -459,9 +459,10 @@ def _expand_connection_includes(
         connection sets from the referenced files.
 
     Raises:
-        ValueError: If an ``include`` entry is malformed.
-        Exception: If a circular include is detected or the referenced file
-            is not found.
+        ValueError: If an ``include`` entry is malformed, the path cannot be
+            resolved, the referenced file contains invalid YAML or an
+            unexpected top-level structure, or a circular include is detected.
+        FileNotFoundError: If the referenced file does not exist.
     """
     if seen_files is None:
         seen_files = set()
@@ -479,7 +480,7 @@ def _expand_connection_includes(
             include_path = Path(include_path_str)
             if not include_path.is_absolute():
                 if base_path is None:
-                    raise Exception(
+                    raise ValueError(
                         f"Cannot resolve relative include path '{include_path_str}' "
                         "because the base path is unknown (input was not a file)."
                     )
@@ -491,14 +492,14 @@ def _expand_connection_includes(
                 raise FileNotFoundError(f"Included file not found: {include_path}")
 
             if include_path in seen_files:
-                raise Exception(f"Circular include detected: {include_path}")
+                raise ValueError(f"Circular include detected: {include_path}")
 
             # Load the included YAML file and extract its connections section.
             included_yaml_str = file_read_text(include_path)
             try:
                 included_data = yaml.safe_load(included_yaml_str)
             except yaml.YAMLError as e:
-                raise type(e)(
+                raise ValueError(
                     f"YAML parsing error in included file '{include_path}': {e}"
                 ) from e
 
