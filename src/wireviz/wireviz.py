@@ -207,6 +207,10 @@ def parse(
 
     connection_sets = yaml_data["connections"]
 
+    # expand any include: directives in the connections list
+    base_path = yaml_file.parent if yaml_file else None
+    connection_sets = _expand_connection_includes(connection_sets, base_path)
+
     # go through connection sets, generate and connect components ==============
 
     template_separator_char = harness.options.template_separator
@@ -426,6 +430,101 @@ def parse(
                 returns.append(harness)
 
         return tuple(returns) if len(returns) != 1 else returns[0]
+
+
+def _expand_connection_includes(
+    connection_sets: list,
+    base_path: Path | None,
+    seen_files: set[Path] | None = None,
+) -> list:
+    """Expand ``include:`` directives inside a connections list.
+
+    Each item in *connection_sets* that is a dict with a single ``include``
+    key is replaced by the connection sets found in the referenced YAML file.
+    All other items are left unchanged.  The expansion is recursive, so an
+    included file may itself contain ``include:`` entries.
+
+    Args:
+        connection_sets: The raw ``connections`` list parsed from YAML.
+        base_path: Directory used to resolve relative include paths.
+            Typically the parent directory of the current YAML file.
+            ``None`` disables relative-path resolution (absolute paths still
+            work).
+        seen_files: Set of already-visited absolute paths used to detect
+            circular includes.  Callers should leave this as ``None``; it is
+            populated automatically during recursion.
+
+    Returns:
+        A new list with all ``include:`` directives replaced by the
+        connection sets from the referenced files.
+
+    Raises:
+        ValueError: If an ``include`` entry is malformed.
+        Exception: If a circular include is detected or the referenced file
+            is not found.
+    """
+    if seen_files is None:
+        seen_files = set()
+
+    expanded: list = []
+    for item in connection_sets:
+        if isinstance(item, dict) and list(item.keys()) == ["include"]:
+            include_path_str = item["include"]
+            if not isinstance(include_path_str, str):
+                raise ValueError(
+                    f"'include' value must be a string path, got: {type(include_path_str)}"
+                )
+
+            # Resolve the path relative to the current file's directory.
+            include_path = Path(include_path_str)
+            if not include_path.is_absolute():
+                if base_path is None:
+                    raise Exception(
+                        f"Cannot resolve relative include path '{include_path_str}' "
+                        "because the base path is unknown (input was not a file)."
+                    )
+                include_path = (base_path / include_path).resolve()
+            else:
+                include_path = include_path.resolve()
+
+            if not include_path.exists():
+                raise FileNotFoundError(f"Included file not found: {include_path}")
+
+            if include_path in seen_files:
+                raise Exception(f"Circular include detected: {include_path}")
+
+            # Load the included YAML file and extract its connections section.
+            included_yaml_str = file_read_text(include_path)
+            try:
+                included_data = yaml.safe_load(included_yaml_str)
+            except yaml.YAMLError as e:
+                raise type(e)(
+                    f"YAML parsing error in included file '{include_path}': {e}"
+                ) from e
+
+            if not isinstance(included_data, dict):
+                raise ValueError(
+                    f"Included file '{include_path}' must contain a YAML mapping at the top level."
+                )
+
+            included_connections = included_data.get("connections", [])
+            if not isinstance(included_connections, list):
+                raise ValueError(
+                    f"'connections' section in '{include_path}' must be a list."
+                )
+
+            # Recursively expand any nested includes in the included file.
+            child_seen = seen_files | {include_path}
+            nested_expanded = _expand_connection_includes(
+                included_connections,
+                include_path.parent,
+                child_seen,
+            )
+            expanded.extend(nested_expanded)
+        else:
+            expanded.append(item)
+
+    return expanded
 
 
 def _get_yaml_data_and_path(inp: str | Path | dict) -> tuple[dict, Path]:
