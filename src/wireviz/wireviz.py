@@ -208,7 +208,7 @@ def parse(
     connection_sets = yaml_data["connections"]
 
     # expand any include: directives in the connections list
-    base_path = yaml_file.parent if yaml_file else None
+    base_path = yaml_file.parent if yaml_file else Path(".")
     connection_sets = _expand_connection_includes(connection_sets, base_path)
 
     # go through connection sets, generate and connect components ==============
@@ -434,7 +434,7 @@ def parse(
 
 def _expand_connection_includes(
     connection_sets: list,
-    base_path: Path | None,
+    base_path: Path | None = Path("."),
     seen_files: set[Path] | None = None,
 ) -> list:
     """Expand ``include:`` directives inside a connections list.
