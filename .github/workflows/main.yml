@@ -33,7 +33,7 @@ jobs:
     - name: Create Examples
       run: PYTHONPATH=$(pwd)/src/wireviz:$PYTHONPATH cd src/wireviz/ && python build_examples.py
     - name: Upload examples, demos, and tutorials
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: examples-and-tutorials-v${{ matrix.python-version }}
         path: |
