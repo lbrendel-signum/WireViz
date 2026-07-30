@@ -409,7 +409,12 @@ Parts can be added to a connector or cable in the section `<additional-component
   type: <str>  # type of additional component
   # all the following are optional:
   subtype: <str>  # additional description (only shown in bom)
-  qty: <int/float>  # qty to add to the bom (defaults to 1)
+  qty: <int/float/str>  # qty to add to the bom (defaults to 1)
+                        # can be a number or a mathematical expression
+                        # expressions support: +, -, *, /, //, %, ** operators
+                        # and variables: pincount, populated, unpopulated (connectors)
+                        #                wirecount, length, terminations, total_length (cables)
+                        # examples: "populated + 2", "wirecount * 2", "length * 1.5"
   qty_multiplier: <str>  # multiplies qty by a feature of the parent component
                   # when used in a connector:
                   # pincount         number of pins of connector
@@ -435,7 +440,14 @@ Alternatively items can be added to just the BOM by putting them in the section 
 -
   description: <str>              
   # all the following are optional:
-  qty: <int/float>  # qty to add to the bom (defaults to 1)
+  qty: <int/float/str>  # qty to add to the bom (defaults to 1)
+                        # can be a number or a mathematical expression
+                        # expressions support: +, -, *, /, //, %, ** operators
+                        # and variables based on designators:
+                        # pincount, populated, unpopulated (from connectors)
+                        # wirecount, length, terminations, total_length (from cables)
+                        # variables are aggregated across all listed designators
+                        # examples: "pincount * 2", "length * 1.5", "populated / 4"
   unit: <str>   
   designators: <List>
   pn: <str>            # [internal] part number

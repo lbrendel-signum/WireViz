@@ -1,0 +1,69 @@
+# Example demonstrating qty field expression support
+# in additional_bom_items and additional_components
+
+options:
+  mini_bom_mode: false
+
+connectors:
+  X1:
+    type: Molex KK 254
+    pincount: 8
+    subtype: female
+    additional_components:
+      - type: Crimp
+        subtype: Molex KK 254, 22-30 AWG
+        qty: "populated"  # Expression: qty equals number of populated pins
+        manufacturer: Molex
+        mpn: 08500030
+      - type: Dust Cap
+        qty: "unpopulated"  # Expression: one cap per unpopulated pin
+        manufacturer: Generic
+        mpn: DC-001
+  X2:
+    type: Molex KK 254
+    pincount: 6
+    subtype: female
+    additional_components:
+      - type: Crimp
+        subtype: Molex KK 254, 22-30 AWG
+        qty: "pincount + 2"  # Expression: extra spares
+        manufacturer: Molex
+        mpn: 08500030
+
+cables:
+  W1:
+    wirecount: 8
+    length: 2.5
+    gauge: 0.25 mm2
+    color_code: IEC
+    additional_components:
+      - type: Cable Tie
+        qty: "length * 2"  # Expression: 2 ties per meter
+        unit: pieces
+      - type: Wire Marker
+        qty: "terminations"  # Expression: one per termination
+        unit: pieces
+
+connections:
+  - - X1: [1-6]
+    - W1: [1-6]
+    - X2: [1-6]
+
+additional_bom_items:
+  - description: Assembly Label
+    qty: 1  # Static number
+  - description: Connector Cover
+    qty: "2"  # Expression as string (evaluates to 2)
+    designators:
+      - X1
+      - X2
+  - description: Adhesive Label
+    qty: "pincount / 2"  # Expression: aggregate pincount from all designators
+    designators:
+      - X1
+      - X2
+  - description: Cable Management Clip
+    qty: "length"  # Expression: based on cable length
+    unit: pieces
+    designators:
+      - W1

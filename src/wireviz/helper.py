@@ -1,3 +1,5 @@
+import ast
+import operator
 import re
 from pathlib import Path
 from typing import Any, TextIO
@@ -292,3 +294,104 @@ def smart_file_resolve(filename: str, possible_paths: str | Path | list[str | Pa
                 f"{filename} was not found in any of the following locations: \n"
                 + "\n".join([str(x) for x in possible_paths])
             )
+
+
+def evaluate_expression(expr: str | int | float, context: dict[str, Any]) -> float:
+    """Safely evaluate a mathematical expression with variable substitution.
+
+    This function evaluates mathematical expressions containing basic arithmetic
+    operations (+, -, *, /, //, %, **) and variables from the context.
+
+    Args:
+        expr: Expression to evaluate. Can be a number (returned as-is) or a string
+            containing a mathematical expression with variables.
+        context: Dictionary mapping variable names to their values. Variables in the
+            expression will be replaced with these values before evaluation.
+
+    Returns:
+        The result of evaluating the expression as a float.
+
+    Raises:
+        ValueError: If the expression contains unsupported operations or syntax errors.
+
+    Examples:
+        >>> evaluate_expression(5, {})
+        5.0
+        >>> evaluate_expression("2 + 3", {})
+        5.0
+        >>> evaluate_expression("pincount * 2", {"pincount": 4})
+        8.0
+        >>> evaluate_expression("wirecount + populated", {"wirecount": 3, "populated": 2})
+        5.0
+    """
+    # If already a number, return it as float
+    if isinstance(expr, (int, float)):
+        return float(expr)
+
+    # Convert to string and strip whitespace
+    expr_str = str(expr).strip()
+
+    # Try to parse as a simple number first
+    try:
+        return float(expr_str)
+    except ValueError:
+        pass
+
+    # Define allowed operators
+    allowed_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    def eval_node(node: ast.AST) -> float:
+        """Recursively evaluate an AST node."""
+        if isinstance(node, ast.Constant):
+            # Python 3.8+ uses ast.Constant for numbers
+            return float(node.value)
+        elif isinstance(node, ast.Num):
+            # Fallback for older Python versions
+            return float(node.n)
+        elif isinstance(node, ast.Name):
+            # Variable lookup
+            if node.id in context:
+                return float(context[node.id])
+            else:
+                raise ValueError(f"Unknown variable: {node.id}")
+        elif isinstance(node, ast.BinOp):
+            # Binary operation (e.g., +, -, *, /)
+            op_type = type(node.op)
+            if op_type not in allowed_operators:
+                raise ValueError(f"Unsupported operator: {op_type.__name__}")
+            left = eval_node(node.left)
+            right = eval_node(node.right)
+            return allowed_operators[op_type](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            # Unary operation (e.g., -, +)
+            op_type = type(node.op)
+            if op_type not in allowed_operators:
+                raise ValueError(f"Unsupported operator: {op_type.__name__}")
+            operand = eval_node(node.operand)
+            return allowed_operators[op_type](operand)
+        elif isinstance(node, ast.Expression):
+            # Top-level expression node
+            return eval_node(node.body)
+        else:
+            raise ValueError(f"Unsupported expression node: {type(node).__name__}")
+
+    try:
+        # Parse the expression into an AST
+        tree = ast.parse(expr_str, mode="eval")
+        # Evaluate the AST
+        result = eval_node(tree)
+        return result
+    except SyntaxError as e:
+        raise ValueError(f"Invalid expression syntax: {expr_str}") from e
+    except Exception as e:
+        raise ValueError(f"Error evaluating expression '{expr_str}': {e}") from e
