@@ -198,7 +198,7 @@ def parse(
                             if image_path and not Path(image_path).is_absolute():
                                 # resolve relative image path
                                 image["src"] = smart_file_resolve(image_path, image_paths)
-                        
+
                         # Fetch supplier data if enabled and supplier/spn are provided
                         if fetch_supplier_data:
                             supplier = attribs.get("supplier")
@@ -210,7 +210,7 @@ def parse(
                                         supplier, spn, attribs
                                     )
                                     attribs.update(enriched_data)
-                        
+
                         if sec == "connectors":
                             template_connectors[key] = attribs
                         elif sec == "cables":
@@ -601,6 +601,8 @@ def _get_output_dir(input_file: Path, default_output_dir: Path) -> Path:
             output_dir = input_file.parent
         else:  # input comes from str or Dict; fall back to cwd
             output_dir = Path.cwd()
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir.resolve()
 
 

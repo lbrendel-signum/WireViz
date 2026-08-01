@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 import yaml
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, task1
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -41,52 +41,50 @@ def save_enriched_yaml(yaml_path: Path, yaml_data: dict, download_images: bool =
     """
     # Create images directory if needed
     images_dir = yaml_path.parent / "images"
-    
+
     if download_images:
         supplier_manager = get_supplier_manager()
-        
+
         # Process connectors
         for key, attribs in yaml_data.get("connectors", {}).items():
             image_url = attribs.get("_image_url")
             if image_url:
                 # Generate image filename from key and URL
-                image_ext = Path(image_url).suffix or ".jpg"
-                image_filename = f"{key}_part{image_ext}"
+                image_filename = f"{str(attribs["mpn"]).replace(" ", "_")}.png"
                 image_path = images_dir / image_filename
-                
+
                 if supplier_manager.download_image(image_url, image_path):
                     # Update YAML to reference local image
                     if "image" not in attribs:
                         attribs["image"] = {}
                     if isinstance(attribs["image"], dict):
                         attribs["image"]["src"] = f"images/{image_filename}"
-                
+
                 # Remove temporary URL fields
                 del attribs["_image_url"]
-            
+
             # Clean up other temporary fields
             if "_datasheet_url" in attribs:
                 del attribs["_datasheet_url"]
-        
+
         # Process cables
         for key, attribs in yaml_data.get("cables", {}).items():
             image_url = attribs.get("_image_url")
             if image_url:
-                image_ext = Path(image_url).suffix or ".jpg"
-                image_filename = f"{key}_part{image_ext}"
+                image_filename = f"{str(attribs['mpn']).replace(' ', '_')}.png"
                 image_path = images_dir / image_filename
-                
+
                 if supplier_manager.download_image(image_url, image_path):
                     if "image" not in attribs:
                         attribs["image"] = {}
                     if isinstance(attribs["image"], dict):
                         attribs["image"]["src"] = f"images/{image_filename}"
-                
+
                 del attribs["_image_url"]
-            
+
             if "_datasheet_url" in attribs:
                 del attribs["_datasheet_url"]
-        
+
         # Process additional_bom_items
         for item in yaml_data.get("additional_bom_items", []):
             if "_image_url" in item:
@@ -99,11 +97,11 @@ def save_enriched_yaml(yaml_path: Path, yaml_data: dict, download_images: bool =
             for attribs in yaml_data.get(section, {}).values():
                 attribs.pop("_image_url", None)
                 attribs.pop("_datasheet_url", None)
-        
+
         for item in yaml_data.get("additional_bom_items", []):
             item.pop("_image_url", None)
             item.pop("_datasheet_url", None)
-    
+
     # Save enriched YAML back to file
     with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.dump(yaml_data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
@@ -123,7 +121,7 @@ def wireviz(
 ) -> None:
     """
     Parses the provided FILE and generates the specified outputs.
-    
+
     Args:
         file: Input YAML file(s) to process
         output_name: Name for output files
@@ -212,22 +210,18 @@ def wireviz(
                 yaml_data_dict = None
                 if save or fetch_supplier_data:
                     yaml_data_dict = yaml.safe_load(yaml_input)
-
-                progress.update(task1, description="[cyan]Building harness connections...")
-
-                wv.parse(
-                    yaml_data_dict if yaml_data_dict else yaml_input,
-                    output_formats=output_formats,
-                    output_dir=_output_dir,
-                    output_name=_output_name,
-                    image_paths=list(image_paths),
-                    fetch_supplier_data=fetch_supplier_data,
-                )
-
-                # Save enriched data back to YAML if requested
-                if save and yaml_data_dict:
                     progress.update(task1, description="[cyan]Saving enriched YAML...")
                     save_enriched_yaml(f, yaml_data_dict, download_images=True)
+                else:
+                    progress.update(task1, description="[cyan]Building harness connections...")
+                    wv.parse(
+                        yaml_data_dict if yaml_data_dict else yaml_input,
+                        output_formats=output_formats,
+                        output_dir=_output_dir,
+                        output_name=_output_name,
+                        image_paths=list(image_paths),
+                        fetch_supplier_data=fetch_supplier_data,
+                    )
 
                 progress.update(task1, description="[green]✓ Complete")
 
@@ -239,7 +233,7 @@ def wireviz(
                 else:
                     output_path = Path(_output_dir) / f"{_output_name}.{fmt}"
                 console.print(f"  [dim]→[/dim] {output_path}")
-            
+
             if save:
                 console.print(f"  [dim]→[/dim] {f} (enriched)")
                 if (f.parent / "images").exists():

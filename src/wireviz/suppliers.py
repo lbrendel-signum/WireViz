@@ -71,8 +71,8 @@ class PartInfo:
             merged["spn"] = self.spn
 
         # Store additional metadata if not present
-        if not merged.get("description") and self.description:
-            merged["description"] = self.description
+        if not merged.get("subtype") and self.description:
+            merged["subtype"] = self.description.replace("&", "and")  # Avoid special characters in subtype
 
         # Store image and datasheet URLs for potential download
         if self.image_url:
@@ -110,10 +110,10 @@ class DigikeyClient(SupplierClient):
             try:
                 # Import digikey-api library if credentials are available
                 import digikey
-                from digikey.v4.productinformation import KeywordSearchRequest
+                from digikey.v4.productinformation import KeywordRequest
 
                 self._client = digikey
-                self._KeywordSearchRequest = KeywordSearchRequest
+                self._KeywordSearchRequest = KeywordRequest
                 self._api_available = True
             except ImportError:
                 # Library not installed, will be unavailable
@@ -145,20 +145,18 @@ class DigikeyClient(SupplierClient):
 
             if part:
                 manufacturer = None
-                if hasattr(part, "manufacturer") and part.manufacturer:
-                    if isinstance(part.manufacturer, dict):
-                        manufacturer = part.manufacturer.get("value")
-                    elif hasattr(part.manufacturer, "value"):
-                        manufacturer = part.manufacturer.value
+                if hasattr(part.product, "manufacturer") and part.product.manufacturer:
+                    if hasattr(part.product.manufacturer, "name"):
+                        manufacturer = part.product.manufacturer.name
                     else:
-                        manufacturer = str(part.manufacturer)
+                        manufacturer = str(part.product.manufacturer)
 
                 return PartInfo(
                     manufacturer=manufacturer,
-                    mpn=getattr(part, "manufacturer_part_number", None),
-                    description=getattr(part, "product_description", None),
-                    image_url=getattr(part, "primary_photo", None),
-                    datasheet_url=getattr(part, "primary_datasheet", None),
+                    mpn=getattr(part.product, "manufacturer_product_number", None),
+                    description=getattr(part.product.description, "product_description", None),
+                    image_url=getattr(part.product, "photo_url", None),
+                    datasheet_url=getattr(part.product, "datasheet_url", None),
                     supplier="Digikey",
                     spn=spn,
                 )

@@ -89,7 +89,7 @@ class Harness:
     def add_connector(self, name: str, *args, **kwargs) -> None:
         check_old(f"Connector '{name}'", OLD_CONNECTOR_ATTR, kwargs)
         try:
-            self.connectors[name] = Connector(name, *args, **kwargs)
+            self.connectors[name] = Connector(name, *args, **{k: v for k, v in kwargs.items() if not k.startswith("_")})
         except Exception as e:
             # Add context about which connector failed
             error_msg = str(e)

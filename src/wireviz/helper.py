@@ -3,6 +3,8 @@ import operator
 import re
 from pathlib import Path
 from typing import Any, TextIO
+from PIL import Image
+
 
 awg_equiv_table = {
     "0.09": "28",
@@ -395,3 +397,68 @@ def evaluate_expression(expr: str | int | float, context: dict[str, Any]) -> flo
         raise ValueError(f"Invalid expression syntax: {expr_str}") from e
     except Exception as e:
         raise ValueError(f"Error evaluating expression '{expr_str}': {e}") from e
+
+
+def convert_all_images(directory: Path) -> None:
+    """Convert JPG images to PNG
+
+    Most image from Digikey and other sources are JPG files but WireViz only
+    supports displaying PNG files. This will convert the JPG files to PNG and
+    remove the JPG version.
+
+    Args:
+        directory (Path): Directory of image files
+
+    """
+    for filename in directory.iterdir():
+        image_path = filename
+        png_path = filename.with_suffix(".png")
+        if filename.suffix.lower() in [".jpg", ".jpeg"]:
+            convert_jpg_to_png(image_path, png_path)
+            Path.unlink(image_path)
+        elif filename.suffix.lower() == ".webp":
+            convert_webp_to_png(image_path, png_path)
+            Path.unlink(image_path)
+
+
+def convert_webp_to_png(webp_path: Path, png_path: Path) -> None:
+    """Convert a WEBP image to PNG.
+
+    Args:
+        webp_path: Path to the WEBP image.
+        png_path: Path to save the PNG image.
+
+    """
+    try:
+        image = Image.open(webp_path)
+        # PNG supports transparency, which WebP might have.
+        # Convert to 'RGBA' mode to preserve potential alpha channels if necessary.
+        # If you want to force a white background, use .convert("RGB") and paste onto a
+        # white background
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGBA")
+        image.save(png_path, "PNG")
+        print(f"Successfully converted {webp_path} to {png_path}")
+    except FileNotFoundError:
+        print(f"Error: {webp_path} not found.")
+    except Exception as e:  # noqa: BLE001
+        print(f"An error occurred: {e}")
+
+
+def convert_jpg_to_png(jpg_path: Path, png_path: Path) -> None:
+    """Convert a JPG image to PNG.
+
+    Args:
+        jpg_path: Path to the JPG image.
+        png_path: Path to save the PNG image.
+
+    """
+    try:
+        image = Image.open(jpg_path)
+        image.save(png_path, "PNG")
+        print(f"Successfully converted {jpg_path} to {png_path}")
+    except FileNotFoundError:
+        print(f"Error: {jpg_path} not found.")
+    except Exception as e:  # noqa: BLE001
+        print(f"An error occurred: {e}")
+
