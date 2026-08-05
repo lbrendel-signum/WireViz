@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 import yaml
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, task1
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -13,7 +13,7 @@ if __name__ == "__main__":
 import wireviz.wireviz as wv
 from wireviz import APP_NAME, __version__
 from wireviz.helper import file_read_text
-from wireviz.suppliers import get_supplier_manager
+from wireviz.suppliers import enrich_yaml_data, get_supplier_manager
 
 # Global console for rich output
 console = Console()
@@ -50,7 +50,7 @@ def save_enriched_yaml(yaml_path: Path, yaml_data: dict, download_images: bool =
             image_url = attribs.get("_image_url")
             if image_url:
                 # Generate image filename from key and URL
-                image_filename = f"{str(attribs["mpn"]).replace(" ", "_")}.png"
+                image_filename = f"{str(attribs["mpn"]).replace(" ", "_").replace("/", "_")}.png"
                 image_path = images_dir / image_filename
 
                 if supplier_manager.download_image(image_url, image_path):
@@ -206,38 +206,44 @@ def wireviz(
                         if p:  # Only add non-empty prepend paths
                             image_paths.add(Path(p).parent)
 
-                # If saving is enabled, parse YAML separately to get enriched data
-                yaml_data_dict = None
-                if save or fetch_supplier_data:
+                if fetch_supplier_data:
+                    progress.update(task1, description="[cyan]Fetching supplier data...")
                     yaml_data_dict = yaml.safe_load(yaml_input)
+                    enrich_yaml_data(yaml_data_dict)
                     progress.update(task1, description="[cyan]Saving enriched YAML...")
                     save_enriched_yaml(f, yaml_data_dict, download_images=True)
                 else:
                     progress.update(task1, description="[cyan]Building harness connections...")
                     wv.parse(
-                        yaml_data_dict if yaml_data_dict else yaml_input,
+                        yaml_input,
                         output_formats=output_formats,
                         output_dir=_output_dir,
                         output_name=_output_name,
                         image_paths=list(image_paths),
-                        fetch_supplier_data=fetch_supplier_data,
                     )
+                    # if save:
+                        # yaml_data_dict = yaml.safe_load(yaml_input)
+                        # progress.update(task1, description="[cyan]Saving YAML...")
+                        # save_enriched_yaml(f, yaml_data_dict, download_images=False)
 
                 progress.update(task1, description="[green]✓ Complete")
 
-            # Show individual output files
-            console.print("[dim]Generated files:[/dim]")
-            for fmt in output_formats:
-                if fmt == "tsv":
-                    output_path = Path(_output_dir) / f"{_output_name}.bom.{fmt}"
-                else:
-                    output_path = Path(_output_dir) / f"{_output_name}.{fmt}"
-                console.print(f"  [dim]→[/dim] {output_path}")
-
-            if save:
+            if fetch_supplier_data:
                 console.print(f"  [dim]→[/dim] {f} (enriched)")
                 if (f.parent / "images").exists():
                     console.print(f"  [dim]→[/dim] {f.parent / 'images'}/ (part images)")
+            else:
+                # Show individual output files
+                console.print("[dim]Generated files:[/dim]")
+                for fmt in output_formats:
+                    if fmt == "tsv":
+                        output_path = Path(_output_dir) / f"{_output_name}.bom.{fmt}"
+                    else:
+                        output_path = Path(_output_dir) / f"{_output_name}.{fmt}"
+                    console.print(f"  [dim]→[/dim] {output_path}")
+
+                if save:
+                    console.print(f"  [dim]→[/dim] {f} (saved)")
         else:
             print("Input file:  ", f)
             print("Output file: ", f"{Path(_output_dir / _output_name)}.{output_formats_str}")
@@ -252,24 +258,23 @@ def wireviz(
                     if p:  # Only add non-empty prepend paths
                         image_paths.add(Path(p).parent)
 
-            # If saving is enabled, parse YAML separately to get enriched data
-            yaml_data_dict = None
-            if save or fetch_supplier_data:
+            if fetch_supplier_data:
                 yaml_data_dict = yaml.safe_load(yaml_input)
-
-            wv.parse(
-                yaml_data_dict if yaml_data_dict else yaml_input,
-                output_formats=output_formats,
-                output_dir=_output_dir,
-                output_name=_output_name,
-                image_paths=list(image_paths),
-                fetch_supplier_data=fetch_supplier_data,
-            )
-
-            # Save enriched data back to YAML if requested
-            if save and yaml_data_dict:
+                enrich_yaml_data(yaml_data_dict)
                 save_enriched_yaml(f, yaml_data_dict, download_images=True)
                 print("Saved enriched YAML:", f)
+            else:
+                wv.parse(
+                    yaml_input,
+                    output_formats=output_formats,
+                    output_dir=_output_dir,
+                    output_name=_output_name,
+                    image_paths=list(image_paths),
+                )
+                if save:
+                    yaml_data_dict = yaml.safe_load(yaml_input)
+                    save_enriched_yaml(f, yaml_data_dict, download_images=False)
+                    print("Saved YAML:", f)
 
     if quiet:
         print()

@@ -323,3 +323,23 @@ def get_supplier_manager() -> SupplierManager:
     if _supplier_manager is None:
         _supplier_manager = SupplierManager()
     return _supplier_manager
+
+
+def enrich_yaml_data(yaml_data: dict) -> None:
+    """Fetch supplier data for all components in a YAML data dict and enrich in-place."""
+    supplier_manager = get_supplier_manager()
+    if not supplier_manager.is_any_supplier_available():
+        return
+
+    for section in ("connectors", "cables"):
+        for attribs in yaml_data.get(section, {}).values():
+            supplier = attribs.get("supplier")
+            spn = attribs.get("spn")
+            if supplier and spn:
+                attribs.update(supplier_manager.fetch_part_info(supplier, spn, attribs))
+
+    for item in yaml_data.get("additional_bom_items", []):
+        supplier = item.get("supplier")
+        spn = item.get("spn")
+        if supplier and spn:
+            item.update(supplier_manager.fetch_part_info(supplier, spn, item))

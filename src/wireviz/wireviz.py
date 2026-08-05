@@ -19,8 +19,6 @@ from wireviz.helper import (
     is_arrow,
     smart_file_resolve,
 )
-from wireviz.suppliers import get_supplier_manager
-
 from . import APP_NAME
 
 
@@ -67,7 +65,6 @@ def parse(
     output_dir: str | Path = None,
     output_name: None | str = None,
     image_paths: Path | str | list = None,
-    fetch_supplier_data: bool = False,
 ) -> Any:
     """
     This function takes an input, parses it as a WireViz Harness file,
@@ -112,10 +109,6 @@ def parse(
             Paths to use when resolving any image paths included in the data.
             Note: If inp is a path to a YAML file,
             its parent directory will automatically be included in the list.
-        fetch_supplier_data (bool, optional):
-            If True, fetch additional part information from supplier APIs when
-            credentials are available. Defaults to False.
-
     Returns:
         Depending on the return_types parameter, may return:
         * None
@@ -198,18 +191,6 @@ def parse(
                             if image_path and not Path(image_path).is_absolute():
                                 # resolve relative image path
                                 image["src"] = smart_file_resolve(image_path, image_paths)
-
-                        # Fetch supplier data if enabled and supplier/spn are provided
-                        if fetch_supplier_data:
-                            supplier = attribs.get("supplier")
-                            spn = attribs.get("spn")
-                            if supplier and spn:
-                                supplier_manager = get_supplier_manager()
-                                if supplier_manager.is_any_supplier_available():
-                                    enriched_data = supplier_manager.fetch_part_info(
-                                        supplier, spn, attribs
-                                    )
-                                    attribs.update(enriched_data)
 
                         if sec == "connectors":
                             template_connectors[key] = attribs
@@ -427,15 +408,6 @@ def parse(
 
     if "additional_bom_items" in yaml_data:
         for line in yaml_data["additional_bom_items"]:
-            # Fetch supplier data if enabled and supplier/spn are provided
-            if fetch_supplier_data:
-                supplier = line.get("supplier")
-                spn = line.get("spn")
-                if supplier and spn:
-                    supplier_manager = get_supplier_manager()
-                    if supplier_manager.is_any_supplier_available():
-                        enriched_data = supplier_manager.fetch_part_info(supplier, spn, line)
-                        line.update(enriched_data)
             harness.add_bom_item(line)
 
     if output_formats:
