@@ -19,7 +19,6 @@ from wireviz.helper import (
     is_arrow,
     smart_file_resolve,
 )
-
 from . import APP_NAME
 
 
@@ -110,7 +109,6 @@ def parse(
             Paths to use when resolving any image paths included in the data.
             Note: If inp is a path to a YAML file,
             its parent directory will automatically be included in the list.
-
     Returns:
         Depending on the return_types parameter, may return:
         * None
@@ -193,6 +191,7 @@ def parse(
                             if image_path and not Path(image_path).is_absolute():
                                 # resolve relative image path
                                 image["src"] = smart_file_resolve(image_path, image_paths)
+
                         if sec == "connectors":
                             template_connectors[key] = attribs
                         elif sec == "cables":
@@ -574,6 +573,8 @@ def _get_output_dir(input_file: Path, default_output_dir: Path) -> Path:
             output_dir = input_file.parent
         else:  # input comes from str or Dict; fall back to cwd
             output_dir = Path.cwd()
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir.resolve()
 
 

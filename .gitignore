@@ -13,6 +13,8 @@ venv/
 desktop.ini
 thumbs.db
 temp/
+**/images/
+
 # Generated output files
 *.gv
 *.bom.tsv
