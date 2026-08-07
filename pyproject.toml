@@ -8,7 +8,7 @@ dependencies = [
     "graphviz>=0.21",
     "pillow>=12.3.0",
     "pyyaml>=6.0.3",
-    "typer>=0.27.0",
+    "typer>=0.27.1",
 ]
 
 [tool.ruff]
