@@ -43,3 +43,6 @@ line-ending = "auto"
 
 [tool.uv]
 package = true
+
+[tool.poe.tasks]
+release = "semantic-release -c release.toml version"
