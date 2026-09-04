@@ -2,7 +2,7 @@
 name = "wireviz"
 version = "0.6.1"
 description = "Add your description here"
-readme = "README.md"
+readme = "docs/README.md"
 requires-python = ">=3.10,<3.15"
 dependencies = [
     "graphviz>=0.21",
@@ -53,4 +53,4 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "wireviz"
-module-root = ""
+module-root = "src"
