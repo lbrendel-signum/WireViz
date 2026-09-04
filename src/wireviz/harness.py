@@ -352,6 +352,9 @@ class Harness:
             for i, (connection_color, wirelabel) in enumerate(
                 zip_longest(cable.colors, cable.wirelabels), 1
             ):
+                if cable.hide_disconnected_wires and not cable.visible_wires.get(i, False):
+                    continue
+
                 wirehtml.append("   <tr>")
                 wirehtml.append(f"    <td><!-- {i}_in --></td>")
                 wirehtml.append("    <td>")
@@ -419,7 +422,9 @@ class Harness:
                         wirehtml.append("   </td></tr>")
                         # fmt: on
 
-            if cable.shield:
+            if cable.shield and not (
+                cable.hide_disconnected_wires and not cable.visible_wires.get("s", False)
+            ):
                 wirehtml.append("   <tr><td>&nbsp;</td></tr>")  # spacer
                 wirehtml.append("   <tr>")
                 wirehtml.append("    <td><!-- s_in --></td>")

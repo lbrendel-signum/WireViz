@@ -345,6 +345,7 @@ class Cable:
         show_name: Whether to show the cable name in diagrams.
         show_wirecount: Whether to show the wire count in diagrams.
         show_wirenumbers: Whether to show wire numbers in diagrams.
+        hide_disconnected_wires: Whether to hide wires with no connections.
         ignore_in_bom: Whether to exclude this cable from the BOM.
         additional_components: List of additional components associated with this cable.
     """
@@ -375,6 +376,7 @@ class Cable:
     show_name: bool | None = None
     show_wirecount: bool = True
     show_wirenumbers: bool | None = None
+    hide_disconnected_wires: bool = False
     ignore_in_bom: bool = False
     additional_components: list[AdditionalComponent] = field(default_factory=list)
 
@@ -426,6 +428,7 @@ class Cable:
             self.length_unit = "m"
 
         self.connections = []
+        self.visible_wires = {}
 
         if self.wirecount:  # number of wires explicitly defined
             if self.colors:  # use custom color palette (partly or looped if needed)
@@ -495,6 +498,11 @@ class Cable:
             self.connections.append(
                 Connection(from_name, from_pin[i], via_wire[i], to_name, to_pin[i])
             )
+            if from_pin[i] is not None or to_pin[i] is not None:
+                self.activate_wire(via_wire[i])
+
+    def activate_wire(self, wire: Wire) -> None:
+        self.visible_wires[wire] = True
 
     def get_qty_multiplier(self, qty_multiplier: CableMultiplier | None) -> float:
         if not qty_multiplier:
